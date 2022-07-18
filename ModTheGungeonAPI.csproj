@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{74614E13-B452-410A-838D-F0E1FEFC0D85}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ModTheGungeonAPI</RootNamespace>
+    <AssemblyName>ModTheGungeonAPI</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="Ionic.Zip, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <HintPath>packages\Ionic.Zip.1.9.1.8\lib\Ionic.Zip.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\MonoMod.Utils.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.13.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ETGMod\Assets\Assets.cs" />
+    <Compile Include="ETGMod\Assets\Data.cs" />
+    <Compile Include="ETGMod\Assets\RuntimeAtlas.cs" />
+    <Compile Include="ETGMod\Databases\ItemDB.cs" />
+    <Compile Include="ETGMod\Databases\StringDB.cs" />
+    <Compile Include="ETGMod\ETGGUI\AutocompletionSettings.cs" />
+    <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommand.cs" />
+    <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommandGroup.cs" />
+    <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommandUnit.cs" />
+    <Compile Include="ETGMod\ETGGUI\ETGDamageIndicatorGUI.cs" />
+    <Compile Include="ETGMod\ETGGUI\ETGModConsole.cs" />
+    <Compile Include="ETGMod\ETGGUI\ETGModDebugLogMenu.cs" />
+    <Compile Include="ETGMod\ETGGUI\ETGModGUI.cs" />
+    <Compile Include="ETGMod\ETGGUI\ETGModLoaderMenu.cs" />
+    <Compile Include="ETGMod\ETGGUI\FontConverter.cs" />
+    <Compile Include="ETGMod\ETGGUI\IETGModMenu.cs" />
+    <Compile Include="ETGMod\ETGMod.cs" />
+    <Compile Include="ETGMod\ETGModUnityEngineHooks.cs" />
+    <Compile Include="ETGMod\Extensions\Extensions.cs" />
+    <Compile Include="ETGMod\Extensions\GunExt.cs" />
+    <Compile Include="ETGMod\GunAnimationSpriteCache.cs" />
+    <Compile Include="ETGMod\GunBehaviour.cs" />
+    <Compile Include="ETGMod\Gungeon.cs" />
+    <Compile Include="ETGMod\IDPool.cs" />
+    <Compile Include="ETGMod\JSON\JSONHelper.COMMON.cs" />
+    <Compile Include="ETGMod\JSON\JSONHelper.META.cs" />
+    <Compile Include="ETGMod\JSON\JSONHelper.READ.cs" />
+    <Compile Include="ETGMod\JSON\JSONHelper.WRITE.cs" />
+    <Compile Include="ETGMod\JSON\JsonHelperReader.cs" />
+    <Compile Include="ETGMod\JSON\JsonHelperWriter.cs" />
+    <Compile Include="ETGMod\JSON\JSONMappedRule.cs" />
+    <Compile Include="ETGMod\JSON\JSONRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONAttachPointDataRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONBagelColliderRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONComponentRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONDictionaryEntryRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONGameObjectRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONMaterialRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONOverridableBoolRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONScriptableObjectRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONTextAssetRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONTextureRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONTransformRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONValueTypeRule.cs" />
+    <Compile Include="ETGMod\JSON\Rules\JSONVectorQuaternionRule.cs" />
+    <Compile Include="ETGMod\LimitedStream.cs" />
+    <Compile Include="ETGMod\ReflectionHelper.cs" />
+    <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="LoadHelper.cs" />
+    <Compile Include="ETGModMainBehaviour.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SAnimationSequence.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SEasings.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SFadeAnimation.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SFadeInAnimation.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SFadeOutAnimation.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SFadeOutShrinkSequence.cs" />
+    <Compile Include="ETGMod\SGUI\Animations\SShrinkAnimation.cs" />
+    <Compile Include="ETGMod\SGUI\Backends\SGUIIMBackend.cs" />
+    <Compile Include="ETGMod\SGUI\DFEXT\SGUIDFInput.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SButton.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SGroup.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SImage.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SLabel.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SPreloader.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SRect.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\STextField.cs" />
+    <Compile Include="ETGMod\SGUI\Elements\SWindowTitleBar.cs" />
+    <Compile Include="ETGMod\SGUI\EMouseStatus.cs" />
+    <Compile Include="ETGMod\SGUI\ISGUIBackend.cs" />
+    <Compile Include="ETGMod\SGUI\Modifiers\SInGameModifier.cs" />
+    <Compile Include="ETGMod\SGUI\Modifiers\SRandomLabelModifier.cs" />
+    <Compile Include="ETGMod\SGUI\SAnimation.cs" />
+    <Compile Include="ETGMod\SGUI\SElement.cs" />
+    <Compile Include="ETGMod\SGUI\SGUIRoot.cs" />
+    <Compile Include="ETGMod\SGUI\SModifier.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Content\enemies.txt" />
+    <EmbeddedResource Include="Content\icon_mod.png" />
+    <EmbeddedResource Include="Content\items.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
