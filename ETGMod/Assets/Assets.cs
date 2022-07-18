@@ -31,6 +31,7 @@ public static partial class ETGMod
             new Vector2(1f, 1f)
         };
         public static Shader DefaultSpriteShader;
+        public static Dictionary<string, Texture2D> TextureMap = new();
         public static RuntimeAtlasPacker Packer = new();
 
         public static Vector2[] GenerateUVs(Texture2D texture, int x, int y, int width, int height)
@@ -183,6 +184,15 @@ public static partial class ETGMod
                             newSprites.Add(frame);
                             newSpriteInst.Add(frame);
                         }
+                        var mapName = $"sprite/{trimmed}/{defName}";
+                        if (TextureMap.ContainsKey(mapName))
+                        {
+                            TextureMap[mapName] = tex;
+                        }
+                        else
+                        {
+                            TextureMap.Add(mapName, tex);
+                        }
                     }
                     coll.spriteDefinitions = newSprites.ToArray();
                     coll.spriteNameLookupDict = null;
@@ -294,6 +304,15 @@ public static partial class ETGMod
                                     id = newSprites.Count;
                                     newSprites.Add(frame);
                                     newSpriteInst.Add(frame);
+                                }
+                                var mapName = $"sprite/{collection}/{name}";
+                                if (TextureMap.ContainsKey(mapName))
+                                {
+                                    TextureMap[mapName] = tex;
+                                }
+                                else
+                                {
+                                    TextureMap.Add(mapName, tex);
                                 }
                                 var jsonpath = $"{path}{collection}.{name}.json";
                                 if (resources.Contains(jsonpath))
