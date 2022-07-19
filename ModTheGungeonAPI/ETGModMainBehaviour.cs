@@ -14,7 +14,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
 {
     public const string GUID = "etgmodding.etg.mtgapi";
     public const string NAME = "Mod the Gungeon API";
-    public const string VERSION = "1.0.1";
+    public const string VERSION = "1.1.2";
     public static ETGModMainBehaviour Instance;
     public readonly static List<Action<GameManager>> OnGameManagerAwake = new();
     public readonly static List<Action<GameManager>> OnGameManagerStart = new();
