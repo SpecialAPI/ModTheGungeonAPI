@@ -13,7 +13,7 @@ namespace MTGAPIPatcher
     {
         public static new T Instantiate<T>(T original) where T : Object
         {
-            return (T)(object)orig_Instantiate(original);
+            return (T)(object)Instantiate((Object)original);
         }
 
         public static new Object Instantiate(Object original)
@@ -22,7 +22,5 @@ namespace MTGAPIPatcher
         }
 
         public static extern Object orig_Instantiate(Object original);
-
-
     }
 }
