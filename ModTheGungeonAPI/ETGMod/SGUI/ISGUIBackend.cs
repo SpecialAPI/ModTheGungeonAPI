@@ -31,6 +31,8 @@ namespace SGUI {
         float IconPadding { get; }
         object Font { get; set; }
 
+        Vector2 ScrollBarSizes { get; }
+
         bool LastMouseEventConsumed { get; }
 
         bool IsValidSecret(long secret);

@@ -27,7 +27,7 @@ namespace SGUI {
 
         public override void Animate(float t) {
             Elem.Size = _OriginalSize * (1f - t);
-            Elem.Parent?.UpdateStyle();
+            if (Elem.Parent != null) Elem.Parent.UpdateStyle();
         }
 
         public override void OnEnd() {

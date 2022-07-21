@@ -2,6 +2,7 @@
 using UnityEngine;
 
 namespace SGUI {
+#if SGUI_EtG
     public class SInGameModifier : SModifier {
 
         public bool ChangeVisible = false;
@@ -22,4 +23,5 @@ namespace SGUI {
         }
 
     }
+#endif
 }

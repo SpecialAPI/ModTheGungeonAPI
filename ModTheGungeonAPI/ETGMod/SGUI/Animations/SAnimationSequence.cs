@@ -55,9 +55,9 @@ namespace SGUI {
 
         public override void Animate(float t) {
             if (CurrentStatus == EStatus.Finished) {
-                Current?.End();
+                if (Current != null) Current.End();
                 _CurrentIndex++;
-                Current?.Start();
+                if (Current != null) Current.Start();
             }
 
             if (Current == null) return;
@@ -69,7 +69,7 @@ namespace SGUI {
 
         public override void OnEnd() {
             base.OnEnd();
-            Current?.End();
+            if (Current != null) Current.End();
             _CurrentIndex = 0;
         }
 

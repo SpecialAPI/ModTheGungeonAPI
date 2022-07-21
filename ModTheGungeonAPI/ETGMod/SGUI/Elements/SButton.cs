@@ -17,7 +17,7 @@ namespace SGUI {
             }
         }
 
-        public TextAnchor Alignment = TextAnchor.MiddleLeft;
+        public TextAnchor Alignment = TextAnchor.MiddleCenter;
 
         public Vector2 Border = new Vector2(4f, 4f);
 
@@ -35,9 +35,8 @@ namespace SGUI {
         public bool IsClicked { get; protected set; }
 
         public SButton()
-            : this("") {  }
+            : this("") { }
         public SButton(string text) {
-
             Text = text;
             ColorCount = 3;
             IconColor = Color.white;
@@ -75,7 +74,14 @@ namespace SGUI {
             base.MouseStatusChanged(e, pos);
 
             if (e == EMouseStatus.Down) {
-                OnClick?.Invoke(this);
+                IsClicked = true;
+            }
+            if (e == EMouseStatus.Up && IsClicked) {
+                if (OnClick != null) OnClick(this);
+                IsClicked = false;
+            }
+            if (e == EMouseStatus.Outside) {
+                IsClicked = false;
             }
         }
 

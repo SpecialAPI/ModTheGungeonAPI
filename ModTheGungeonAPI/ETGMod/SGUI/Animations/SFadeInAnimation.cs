@@ -13,7 +13,8 @@ namespace SGUI {
         }
 
         public override Color Animate(float t, Color c) {
-            return c.WithAlpha(t * c.a);
+            c.a *= t;
+            return c;
         }
 
     }

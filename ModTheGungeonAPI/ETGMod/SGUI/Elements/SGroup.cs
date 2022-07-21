@@ -38,7 +38,7 @@ namespace SGUI {
                 return IsWindow ? Size : new Vector2(
                     Size.x - Border * 2f,
                     Size.y - Border * 2f
-                );
+                ) - Backend.ScrollBarSizes;
             }
         }
 
@@ -49,7 +49,7 @@ namespace SGUI {
         }
 
         public override void HandleChange(object sender, ListChangedEventArgs e) {
-            if (e?.ListChangedType == ListChangedType.ItemAdded) {
+            if (e != null && e.ListChangedType == ListChangedType.ItemAdded) {
                 SElement elem = Children[e.NewIndex];
                 if (elem is SWindowTitleBar) {
                     Children.RemoveAt(e.NewIndex);
@@ -92,7 +92,8 @@ namespace SGUI {
         public override void UpdateChildrenStyles() {
             WindowTitleBar.Root = Root;
             WindowTitleBar.Parent = this;
-            WindowTitleBar.UpdateStyle();
+            if (WindowTitleBar.Enabled)
+                WindowTitleBar.UpdateStyle();
 
             base.UpdateChildrenStyles();
         }
@@ -102,7 +103,7 @@ namespace SGUI {
             Draw.Rect(this, Position, Size, Background);
         }
         public override void Render() {
-            if (ScrollDirection != EDirection.None) {
+            if (Backend.ScrollBarSizes.x == 0f && ScrollDirection != EDirection.None) {
                 ScrollPosition = new Vector2(
                     Mathf.Clamp(ScrollPosition.x + ScrollMomentum.x, 0f, ContentSize.x - Size.x),
                     Mathf.Clamp(ScrollPosition.y + ScrollMomentum.y, 0f, ContentSize.y - Size.y + (IsWindow ? WindowTitleBar.Size.y : 0f))
@@ -142,10 +143,10 @@ namespace SGUI {
             }
 
             if (AutoLayoutVerticalStretch) {
-                elem.Size.x = Size.x;
+                elem.Size.x = InnerSize.x;
             }
             elem.Position = new Vector2(0f, _CurrentAutoLayoutVerticalY);
-            _CurrentAutoLayoutVerticalY += elem.Size.y + AutoLayoutPadding;
+            _CurrentAutoLayoutVerticalY += elem.InnerSize.y + AutoLayoutPadding;
 
             GrowToFit(elem);
         }
@@ -161,10 +162,10 @@ namespace SGUI {
             }
 
             if (AutoLayoutVerticalStretch) {
-                elem.Size.y = Size.y;
+                elem.Size.y = InnerSize.y;
             }
             elem.Position = new Vector2(_CurrentAutoLayoutHorizontalX, 0f);
-            _CurrentAutoLayoutHorizontalX += elem.Size.x + AutoLayoutPadding;
+            _CurrentAutoLayoutHorizontalX += elem.InnerSize.x + AutoLayoutPadding;
 
             GrowToFit(elem);
         }
@@ -177,7 +178,7 @@ namespace SGUI {
             }
 
             if (index == 0) {
-                Background = Background.WithAlpha(0f);
+                Background = Background * 0f;
 
                 if ((AutoGrowDirection & EDirection.Horizontal) == EDirection.Horizontal) {
                     Size.x = Parent.InnerSize.x;

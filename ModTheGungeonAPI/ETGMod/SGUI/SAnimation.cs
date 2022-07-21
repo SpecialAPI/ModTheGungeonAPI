@@ -51,7 +51,7 @@ namespace SGUI {
             }
 
         Loop:
-            float t = ((SpeedUnscaled ? Time.unscaledTime : Time.time) - TimeStart) / Duration;
+            float t = ((SpeedUnscaled ? SGUIRoot.TimeUnscaled : SGUIRoot.Time) - TimeStart) / Duration;
             if (t >= 1f) {
                 End();
                 if (!Loop) return;
@@ -66,7 +66,7 @@ namespace SGUI {
         public void Start() {
             OnStart();
 
-            TimeStart = SpeedUnscaled ? Time.unscaledTime : Time.time;
+            TimeStart = (SpeedUnscaled ? SGUIRoot.TimeUnscaled : SGUIRoot.Time);
             Status = EStatus.Running;
         }
 
@@ -100,12 +100,12 @@ namespace SGUI {
 
         public Action<SAnimation> DOnStart;
         public override void OnStart() {
-            DOnStart?.Invoke(this);
+            if (DOnStart != null) DOnStart(this);
         }
 
         public Action<SAnimation, float> DOnAnimate;
         public override void Animate(float t) {
-            DOnAnimate?.Invoke(this, t);
+            if (DOnAnimate != null) DOnAnimate(this, t);
         }
 
         public override void OnEnd() {

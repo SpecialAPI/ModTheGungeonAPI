@@ -4,17 +4,16 @@ using System.Text;
 using UnityEngine;
 
 namespace SGUI {
-    public sealed class SGUIIMBackend : ISGUIBackend {
+    public sealed class SGUIIMEditorBackend : ISGUIBackend {
 
         public readonly static Rect NULLRECT = new Rect(-1f, -1f, 0f, 0f);
         public readonly static Vector2 MAXVEC2 = new Vector2(float.MaxValue, float.MaxValue);
 
-        public static int DefaultDepth = 0x0ade;
-        public int Depth = DefaultDepth;
-
-        public static Func<SGUIIMBackend, Font> GetFont;
-
         private readonly static Color _Transparent = new Color(0f, 0f, 0f, 0f);
+
+        // IDisposable, yet cannot be disposed. Let's keep one reference for the lifetime of all backend instances.
+        private readonly static TextGenerator _TextGenerator = new TextGenerator();
+        private TextGenerationSettings _TextGenerationSettings = new TextGenerationSettings();
 
         private readonly static List<SElement> _ComponentElements = new List<SElement>();
         private static int _GlobalComponentSemaphore;
@@ -34,9 +33,6 @@ namespace SGUI {
         private readonly List<Rect> _OPBounds = new List<Rect>();
         private readonly List<object[]> _OPData = new List<object[]>();
 
-        private GUISkin _OldSkin;
-        public GUISkin Skin;
-
         public SGUIRoot CurrentRoot { get; private set; }
 
         public bool UpdateStyleOnGUI {
@@ -53,7 +49,7 @@ namespace SGUI {
 
         public bool RenderOnGUILayout {
             get {
-                return false;
+                return true;
             }
         }
 
@@ -71,23 +67,22 @@ namespace SGUI {
             }
         }
 
-        private Font _Font;
+        private GUISkin _Skin;
+
         public object Font {
             get {
-                return _Font;
+                return _Skin.font;
             }
             set {
-                Font valueFont = (Font) value;
-                if (_Font != valueFont) {
-                    LineHeight = valueFont.dynamic ? valueFont.lineHeight * 1.5f : (valueFont.characterInfo[0].glyphHeight + 4f);
-                }
-                _Font = valueFont;
+                throw new InvalidOperationException("SGUIIMEditorBackend only supports the default Unity skin!");
             }
         }
 
-        public Vector2 ScrollBarSizes {
-            get {
-                return Vector2.zero;
+        public Vector2 ScrollBarSizes { get {
+                return new Vector2(
+                    _Skin.verticalScrollbar.CalcSize(GUIContent.none).x,
+                    _Skin.horizontalScrollbar.CalcSize(GUIContent.none).y
+                );
             }
         }
 
@@ -112,23 +107,8 @@ namespace SGUI {
 
         public bool Initialized { get; private set; }
         public void Init() {
-            Skin = ScriptableObject.CreateInstance<GUISkin>();
-
-            if (Font == null) {
-                if (GetFont != null) {
-                    Skin.font = GetFont(this);
-                }
-                Font = Skin.font ?? GUI.skin.font;
-
-                Skin.label.alignment = TextAnchor.MiddleCenter;
-                Skin.textField.alignment = TextAnchor.MiddleLeft;
-
-                Skin.verticalScrollbar.fixedWidth = 0f;
-                Skin.verticalScrollbarThumb.fixedWidth = 0f;
-
-                Skin.horizontalScrollbar.fixedHeight = 0f;
-                Skin.horizontalScrollbarThumb.fixedHeight = 0f;
-            }
+            _Skin = GUI.skin;
+            LineHeight = _Skin.font.lineHeight * 1.5f;
 
             Initialized = true;
         }
@@ -139,18 +119,6 @@ namespace SGUI {
             }
             CurrentRoot = root;
             _Reason = Event.current;
-
-            _OldSkin = GUI.skin;
-            GUI.skin = Skin;
-
-            Skin.textField.normal.background = CurrentRoot.TextFieldBackground[0];
-            Skin.textField.active.background = CurrentRoot.TextFieldBackground[1];
-            Skin.textField.hover.background = CurrentRoot.TextFieldBackground[2];
-            Skin.textField.focused.background = CurrentRoot.TextFieldBackground[3];
-
-            Skin.settings.selectionColor = new Color(0.3f, 0.6f, 0.9f, 1f);
-
-            GUI.depth = Depth;
 
             if (IsOnGUIRepainting) {
                 if (_GlobalComponentSemaphore == 0) {
@@ -174,8 +142,6 @@ namespace SGUI {
                 throw new InvalidOperationException("EndOnGUI already called! Call StartOnGUI first!");
             }
             // Console.WriteLine("SGUI-IM: Ending render with " + _GlobalComponentSemaphore + " components, of which " + _ComponentSemaphore + " are local.");
-
-            GUI.skin = _OldSkin;
 
             _GlobalComponentSemaphore -= _ComponentSemaphore;
             _ComponentSemaphore = 0;
@@ -233,6 +199,11 @@ namespace SGUI {
             Vector2 pos = e.mousePosition;
 
             int handled = HandleMouseEventIn(e, null);
+
+            _RegisteredNextElement = false;
+            for (int i = 0; i < _OPs.Count; i++) {
+                _RecreateOperation(i, -1);
+            }
 
             if (handled != -1) {
                 if (type != EventType.MouseMove) {
@@ -334,19 +305,13 @@ namespace SGUI {
                 return -1;
             }
 
-            if (e.type == EventType.ScrollWheel && group.ScrollDirection != SGroup.EDirection.None) {
-                group.ScrollMomentum = e.delta * group.ScrollInitialMomentum;
-                e.Use();
-                return groupFirstComponent;
-            }
-
             IList<SElement> children = group.Children;
             for (int i = children.Count - 1; 0 <= i; i--) {
                 if ((handled = HandleMouseEventIn(e, children[i])) != -1) return handled;
             }
 
             // Window background would be click-through otherwise.
-            if (!new Rect(group.AbsoluteOffset + group.Position, group.Size).Contains(e.mousePosition)) {
+            if (!new Rect(group.AbsoluteOffset + group.Position, group.InnerSize).Contains(e.mousePosition)) {
                 e.Use();
                 return groupFirstComponent;
             }
@@ -403,7 +368,7 @@ namespace SGUI {
 
             SElement elem = _Elements[elemID];
 
-            if (op == EGUIOperation.Draw) {
+            if (op == EGUIOperation.Draw && handledComponentID != -1) {
                 if (e.type == EventType.Used) {
                     // Console.WriteLine("SGUI-IM: Current event used - recreating operation @ NULLRECT");
                     bounds = NULLRECT;
@@ -428,8 +393,12 @@ namespace SGUI {
                             GUI.Label(bounds, (string) data[0]);
                             break;
 
-                        case EGUIComponent.TextField:
                         case EGUIComponent.Button:
+                            RegisterNextComponent();
+                            GUI.Button(bounds, (string) data[0]);
+                            break;
+
+                        case EGUIComponent.TextField:
                             RegisterNextComponent();
                             // TextField and Button use mouse input by themselves.
                             if (elemGUI == EGUIComponent.TextField) {
@@ -500,7 +469,11 @@ namespace SGUI {
                             break;
 
                         case EGUIComponent.Scroll:
-                            GUI.BeginScrollView(bounds, (Vector2) data[0], (Rect) data[1]);
+                            data[0] = GUI.BeginScrollView(bounds, (Vector2) data[0], (Rect) data[1], (bool) data[2], (bool) data[3]);
+                            SGroup group = elem as SGroup;
+                            if (group != null) {
+                                group.ScrollPosition = (Vector2) data[0];
+                            }
                             _ClipScopeTypes.Push(EClipScopeType.Scroll);
                             _ClipScopeRects.Push(bounds);
                             break;
@@ -664,7 +637,6 @@ namespace SGUI {
             Text_(elem, position, size, text, alignment, icon);
         }
         private void Text_(SElement elem, Vector2 position, Vector2 size, string text, TextAnchor alignment = TextAnchor.MiddleCenter, Texture icon = null, bool registerProperly = true) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
             float y = 0f;
 
             Vector2 iconScale =
@@ -672,44 +644,10 @@ namespace SGUI {
                 ((elem as SButton) == null ? new Vector2?() : (elem as SButton).IconScale) ??
                 Vector2.one;
 
-            float iconWidth = icon != null ? (icon.width * iconScale.x + 1f) : 0f;
+            float iconWidth = icon != null ? icon.width * iconScale.x : 0f;
             float iconHeight = icon != null ? icon.height * iconScale.y : 0f;
-
-            if (text.Contains("\n")) {
-                string[] lines = text.Split('\n');
-
-                Vector2 lineSize = new Vector2(size.x - iconWidth, LineHeight);
-
-                if (icon != null) {
-                    y = size.y * 0.5f - (lines.Length * lineSize.y) * 0.5f;
-                }
-
-                for (int i = 0; i < lines.Length; i++) {
-                    string line = lines[i];
-                    Text_(
-                        elem,
-                        position + new Vector2(iconWidth, y),
-                        lineSize,
-                        icon != null ? (" " + line) : line,
-                        alignment,
-                        null,
-                        registerProperly
-                    );
-                    y += lineSize.y;
-                }
-
-                PreparePosition(elem, ref position);
-
-                if (icon != null) {
-                    Texture(
-                        null,
-                        position + new Vector2(0f, size.y * 0.5f - iconHeight * 0.5f),
-                        new Vector2(iconWidth, iconHeight),
-                        icon,
-                        ((elem == null || elem.Colors == null) ? new Color?() : elem.Colors.AtOr(1, Color.white)) ?? Color.white
-                    );
-                }
-                return;
+            if (icon != null) {
+                iconWidth += 1f;
             }
 
             PreparePosition(elem, ref position);
@@ -718,15 +656,17 @@ namespace SGUI {
             }
             Rect bounds = new Rect(position + new Vector2(iconWidth, y), size - new Vector2(iconWidth, y * 2f));
 
-            Skin.label.normal.textColor = (elem == null ? new Color?() : elem.Foreground) ?? Color.white;
-            if (elem != null && elem is SButton) {
-                Skin.label.normal.textColor = Skin.label.normal.textColor * (elem.IsHovered ? 1f : 0.8f);
-            }
-            Skin.label.alignment = alignment;
+            Color prevColor = _Skin.label.normal.textColor;
+            _Skin.label.normal.textColor = (elem == null ? new Color?() : elem.Foreground) ?? _Skin.label.normal.textColor;
+            TextAnchor prevAlignment = _Skin.label.alignment;
+            _Skin.label.alignment = alignment;
             RegisterNextComponentIn(elem);
             RegisterOperation(EGUIOperation.Draw, EGUIComponent.Label, registerProperly ? bounds : NULLRECT, text);
             if (icon != null) text = " " + text;
             GUI.Label(bounds, text);
+
+            _Skin.label.normal.textColor = prevColor;
+            _Skin.label.alignment = prevAlignment;
 
             if (icon != null) {
                 Texture(
@@ -740,15 +680,9 @@ namespace SGUI {
         }
 
         public void TextField(SElement elem, Vector2 position, Vector2 size, ref string text) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
             PreparePosition(elem, ref position);
 
             if (elem != null && IsOnGUIRepainting) {
-                Skin.textField.normal.textColor = elem.Foreground * 0.9f;
-                Skin.textField.active.textColor = elem.Foreground;
-                Skin.textField.hover.textColor = elem.Foreground;
-                Skin.textField.focused.textColor = elem.Foreground;
-                Skin.settings.cursorColor = elem.Foreground;
                 GUI.backgroundColor = elem.Background;
             }
 
@@ -761,7 +695,7 @@ namespace SGUI {
             STextField field = elem as STextField;
 
             if (field != null && field.OverrideTab && keyEvent && (e.keyCode == KeyCode.Tab || e.character == '\t')) {
-                e.Use();
+                /*e.Use();*//*NO*/
             }
 
             RegisterNextComponentIn(elem);
@@ -785,63 +719,6 @@ namespace SGUI {
             RegisterNextComponent();
             RegisterOperation(EGUIOperation.Draw, EGUIComponent.TextField, bounds, text);
             text = GUI.TextField(bounds, text);
-
-            if (!Skin.font.dynamic && IsFocused(CurrentComponentID) && IsOnGUIRepainting) {
-                TextEditor editor = (TextEditor) GUIUtility.GetStateObject(typeof(TextEditor), GUIUtility.keyboardControl);
-#pragma warning disable CS0618
-                // TextEditor.content is obsolete, yet it must be accessed.
-                // Alternatively access TextEditor.m_Content via reflection.
-                GUIContent content = editor.content;
-#pragma warning restore CS0618
-                Color prevGUIColor = GUI.color;
-
-                if (editor.cursorIndex != editor.selectIndex) {
-                    Rect boundsRelative = new Rect(-editor.scrollOffset, bounds.size);
-                    Vector2 selectA = editor.style.GetCursorPixelPosition(boundsRelative, content, editor.cursorIndex);
-                    Vector2 selectB = editor.style.GetCursorPixelPosition(boundsRelative, content, editor.selectIndex);
-                    Vector2 selectFrom, selectTo;
-                    if (selectA.x <= selectB.x) {
-                        selectFrom = selectA;
-                        selectTo = selectB;
-                    } else {
-                        selectFrom = selectB;
-                        selectTo = selectA;
-                    }
-
-                    GUI.BeginClip(bounds);
-
-                    GUI.color = Skin.settings.selectionColor;
-                    GUI.DrawTexture(new Rect(
-                        selectFrom.x,
-                        editor.style.padding.top,
-                        selectTo.x - selectFrom.x,
-                        bounds.height - editor.style.padding.top - editor.style.padding.bottom
-                    ), SGUIRoot.White, ScaleMode.StretchToFill, false);
-
-                    GUI.color = prevGUIColor;
-                    Skin.label.normal.textColor = GUI.backgroundColor;
-                    // Draw over the text field. Again. Because.
-                    GUI.Label(new Rect(
-                        selectFrom.x,
-                        0f,
-                        selectTo.x - selectFrom.x,
-                        bounds.height
-                    ), editor.SelectedText);
-
-                    GUI.EndClip();
-                }
-
-                Vector2 cursor = editor.style.GetCursorPixelPosition(bounds, content, editor.cursorIndex) - editor.scrollOffset;
-                GUI.color = Skin.settings.cursorColor;
-                GUI.DrawTexture(new Rect(
-                    cursor.x - 2f,
-                    bounds.y + editor.style.padding.top,
-                    1f,
-                    bounds.height - editor.style.padding.top - editor.style.padding.bottom
-                ), SGUIRoot.White, ScaleMode.StretchToFill, false);
-
-                GUI.color = prevGUIColor;
-            }
         }
         public void MoveTextFieldCursor(SElement elem, ref int? cursor, ref int? selection) {
             if (!IsFocused(GetFirstComponentID(elem))) {
@@ -862,8 +739,6 @@ namespace SGUI {
 
 
         public void Button(SElement elem, Vector2 position, Vector2 size, string text, TextAnchor alignment = TextAnchor.MiddleCenter, Texture icon = null) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
-
             if (elem != null && IsOnGUIRepainting) {
                 GUI.backgroundColor = elem.Background;
             }
@@ -871,13 +746,16 @@ namespace SGUI {
             Vector2 border_ = ((elem as SButton) == null ? new Vector2?() : (elem as SButton).Border) ?? new Vector2(4f, 4f);
             if (!(elem is SButton)) size += border_;
 
-            Rect(elem, position, size, GUI.backgroundColor);
+            TextAnchor prevAlignment = _Skin.label.alignment;
+            _Skin.button.alignment = alignment;
 
-            Text_(
-                elem,
-                position + border_,
-                size - border_ * 2f,
-                text, alignment, icon, false);
+            PreparePosition(elem, ref position);
+            Rect bounds = new Rect(position, size);
+            RegisterNextComponentIn(elem);
+            RegisterOperation(EGUIOperation.Draw, EGUIComponent.Button, bounds, text);
+            GUI.Button(bounds, new GUIContent(text, icon));
+
+            _Skin.label.alignment = alignment;
         }
 
 
@@ -895,7 +773,10 @@ namespace SGUI {
 
             } else {
                 Rect viewBounds = new Rect(Vector2.zero, group.ContentSize);
-                RegisterOperation(EGUIOperation.Start, EGUIComponent.Scroll, bounds, group.ScrollPosition, viewBounds);
+                RegisterOperation(EGUIOperation.Start, EGUIComponent.Scroll, bounds, group.ScrollPosition, viewBounds,
+                    (group.ScrollDirection & SGroup.EDirection.Horizontal) == SGroup.EDirection.Horizontal,
+                    (group.ScrollDirection & SGroup.EDirection.Vertical) == SGroup.EDirection.Vertical
+                );
                 GUI.BeginScrollView(
                     bounds, group.ScrollPosition, viewBounds,
                     (group.ScrollDirection & SGroup.EDirection.Horizontal) == SGroup.EDirection.Horizontal,
@@ -910,7 +791,6 @@ namespace SGUI {
             if (group.ScrollDirection != SGroup.EDirection.None) {
                 RegisterOperation(EGUIOperation.End, EGUIComponent.Scroll, NULLRECT);
                 GUI.EndScrollView();
-                _ScrollBar(group);
             } else {
                 RegisterOperation(EGUIOperation.End, EGUIComponent.Group, NULLRECT);
                 GUI.EndGroup();
@@ -975,7 +855,10 @@ namespace SGUI {
                 _ClipScopeTypes.Push(EClipScopeType.Clip);
             } else {
                 Rect viewBounds = new Rect(Vector2.zero, group.ContentSize);
-                RegisterOperation(EGUIOperation.Start, EGUIComponent.Scroll, bounds, group.ScrollPosition, viewBounds);
+                RegisterOperation(EGUIOperation.Start, EGUIComponent.Scroll, bounds, group.ScrollPosition, viewBounds,
+                    (group.ScrollDirection & SGroup.EDirection.Horizontal) == SGroup.EDirection.Horizontal,
+                    (group.ScrollDirection & SGroup.EDirection.Vertical) == SGroup.EDirection.Vertical
+                );
                 GUI.BeginScrollView(
                     bounds, group.ScrollPosition, viewBounds,
                     (group.ScrollDirection & SGroup.EDirection.Horizontal) == SGroup.EDirection.Horizontal,
@@ -992,9 +875,8 @@ namespace SGUI {
             }
 
             if (group.ScrollDirection != SGroup.EDirection.None) {
-                RegisterOperation(EGUIOperation.End, EGUIComponent.Clip, NULLRECT);
+                RegisterOperation(EGUIOperation.End, EGUIComponent.Scroll, NULLRECT);
                 GUI.EndScrollView();
-                _ScrollBar(group);
             } else {
                 RegisterOperation(EGUIOperation.End, EGUIComponent.Clip, NULLRECT);
                 GUI.EndClip();
@@ -1022,38 +904,39 @@ namespace SGUI {
             // TODO Window header buttons.
         }
 
-        private void _ScrollBar(SGroup group) {
-            Rect bounds = !group.IsWindow ? new Rect(group.InnerOrigin, group.InnerSize) : new Rect(
-                group.Border,
-                group.WindowTitleBar.Size.y + group.Border,
-                group.Size.x, group.Size.y
-            );
-
-            if (bounds.height <= group.ContentSize.y) {
-                float width = 2f; // TODO Grow on mouse-over.
-                Vector2 position = new Vector2(
-                    bounds.x + bounds.width - width,
-                    bounds.y + bounds.height * group.ScrollPosition.y / group.ContentSize.y
-                );
-                Vector2 size = new Vector2(
-                    width,
-                    Mathf.Max(0f, Mathf.Min(bounds.height, bounds.height * bounds.height / group.ContentSize.y + position.y) - position.y)
-                );
-
-                Rect(group, position, size, group.Foreground * 0.8f);
-
-                // TODO Mouse input.
-            }
-
-            // TODO Horizontal scroll.
-
-        }
-
         public Vector2 MeasureText(string text, Vector2? size = null, object font = null) {
             return MeasureText(ref text, size, font);
         }
         public Vector2 MeasureText(ref string text, Vector2? size = null, object font = null) {
-            Font font_ = (Font) font ?? _Font;
+            /*
+            Font font_ = _Skin.font;
+
+            font_.RequestCharactersInTexture(text, 0);
+
+            _TextGenerationSettings.richText = true;
+
+            _TextGenerationSettings.font = font_;
+            _TextGenerationSettings.fontSize = font_.fontSize;
+            _TextGenerationSettings.lineSpacing = LineHeight;
+
+            if (size != null) {
+                _TextGenerationSettings.generateOutOfBounds = false;
+                _TextGenerationSettings.horizontalOverflow = HorizontalWrapMode.Wrap;
+                _TextGenerationSettings.generationExtents = size.Value;
+            } else {
+                _TextGenerationSettings.generateOutOfBounds = true;
+                _TextGenerationSettings.horizontalOverflow = HorizontalWrapMode.Overflow;
+                _TextGenerationSettings.generationExtents = Vector2.zero;
+            }
+
+            _TextGenerator.Populate(text, _TextGenerationSettings);
+            return new Vector2(
+                _TextGenerator.GetPreferredWidth(text, _TextGenerationSettings),
+                (LineHeight * _TextGenerator.lineCount)
+            );
+            */
+
+            Font font_ = _Skin.font;
 
             font_.RequestCharactersInTexture(text, 0);
 

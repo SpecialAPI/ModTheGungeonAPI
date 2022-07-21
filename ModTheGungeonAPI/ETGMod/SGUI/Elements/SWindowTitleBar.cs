@@ -7,7 +7,7 @@ namespace SGUI {
 
         public SWindowTitleBar() {
             ColorCount = 1;
-            Background = Background.WithAlpha(Background.a * 2f);
+            Background = Background * 2f;
 
             Children.Add(new SButton {
 
