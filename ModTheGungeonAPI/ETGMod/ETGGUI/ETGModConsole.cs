@@ -448,6 +448,7 @@ public class ETGModConsole : ETGModMenu
                 .AddUnit("clear", (string[] args) =>
                 {
                     GUI[0].Children.Clear();
+                    ((SGroup)GUI[0]).ContentSize.y = 0;
                     GUI[0].Children.Add(new SLabel("Use <color=#ffffffff>help</color> to find out how to use the console.") { Foreground = Color.green });
                     GUI[0].Children.Add(new SLabel("Use <color=#ffffffff>clear</color> to clear all messages.") { Foreground = Color.green });
                     ((SGroup)GUI[0]).ScrollPosition.y = 0f;

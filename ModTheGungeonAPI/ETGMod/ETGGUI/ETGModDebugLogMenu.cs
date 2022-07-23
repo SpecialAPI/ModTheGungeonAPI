@@ -34,6 +34,7 @@ public class ETGModDebugLogMenu : ETGModMenu {
             AutoLayout = (SGroup g) => g.AutoLayoutVertical,
             ScrollDirection = SGroup.EDirection.Vertical,
             Children = {
+                new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
                 new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
                 new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
                 new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green },
@@ -41,34 +42,55 @@ public class ETGModDebugLogMenu : ETGModMenu {
         };
     }
 
-    public override void Update() {
+    public override void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            var listOfText = _AllLoggedText;
+            GUI.Children.Clear();
+            GUI.ContentSize.y = 0;
+            GUI.Children.AddRange(new()
+            {
+                new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
+                new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
+                new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
+                new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green }
+            });
+            listOfText.Clear();
+            _LoggedTextAddIndex = 0;
+            GUI.ScrollPosition.y = 0f;
+        }
+        else if (Input.GetKeyDown(KeyCode.F))
+        {
+            if (_AllLoggedText.Exists(x => x.LogType != LogType.Exception && x.LogType != LogType.Error))
+            {
+                var listOfText = _AllLoggedText;
+                List<LoggedText> toAddBack = new();
+                GUI.Children.Clear();
+                GUI.ContentSize.y = 0;
+                GUI.Children.AddRange(new()
+                {
+                    new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
+                    new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
+                    new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
+                    new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green }
+                });
+                foreach (LoggedText t in listOfText)
+                {
+                    if (t.LogType is LogType.Exception or LogType.Error)
+                    {
+                        toAddBack.Add(new LoggedText(t.LogMessage, t.Stacktace, t.LogType) { LogCount =  t.LogCount });
+                    }
+                }
+                listOfText.Clear();
+                _LoggedTextAddIndex = 0;
+                listOfText.AddRange(toAddBack);
+                GUI.ScrollPosition.y = 0f;
+            }
+        }
         if (_LoggedTextAddIndex < _AllLoggedText.Count) {
             _AllLoggedText[_LoggedTextAddIndex].Start();
             ++_LoggedTextAddIndex;
-        }
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            var filteredLoggedText = new List<LoggedText>();
-            var contentSize = 0f;
-            foreach (var msg in _AllLoggedText)
-            {
-                if (msg.LogType == LogType.Error || msg.LogType == LogType.Exception)
-                {
-                    filteredLoggedText.Add(msg);
-                    contentSize += msg.GUIMessage.Size.y;
-                }
-                else
-                {
-                    GUI.Children.Remove(msg.GUIMessage);
-                    GUI.Children.Remove(msg.GUIStacktrace);
-                }
-            }
-            _AllLoggedText = filteredLoggedText;
-            Instance.GUI.UpdateStyle();
-            GUI.Size.y = Mathf.Max(contentSize, 1020);
-            GUI.ContentSize.y = Mathf.Max(contentSize, 1020);
-            _LoggedTextAddIndex = _AllLoggedText.Count;
-            GUI.ScrollPosition.y = 0f;
         }
         if (Input.GetKeyDown(KeyCode.B))
         {
