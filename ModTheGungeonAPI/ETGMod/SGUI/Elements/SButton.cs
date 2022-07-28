@@ -17,7 +17,7 @@ namespace SGUI {
             }
         }
 
-        public TextAnchor Alignment = TextAnchor.MiddleCenter;
+        public TextAnchor Alignment = TextAnchor.MiddleLeft;
 
         public Vector2 Border = new Vector2(4f, 4f);
 

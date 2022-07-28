@@ -1073,8 +1073,8 @@ public class ETGModConsole : ETGModMenu
                 ScrollDirection = SGroup.EDirection.Vertical,
                 OnUpdateStyle = delegate (SElement elem)
                 {
-                    elem.Size = new Vector2(elem.Parent.InnerSize.x, Mathf.Min(((SGroup)elem).ContentSize.y, 160f));
-                    elem.Position = GUI[1].Position - new Vector2(0f, elem.Size.y + 4f);
+                    elem.Size = new Vector2(elem.Parent.InnerSize.x, Mathf.Min(((SGroup)elem).ContentSize.y, 160f) - elem.Backend.LineHeight + 4f);
+                    elem.Position = GUI[1].Position - new Vector2(0f, elem.Size.y + elem.Backend.LineHeight + 8f);
                 }
             };
 

@@ -749,6 +749,7 @@ namespace SGUI {
                 Skin.textField.hover.textColor = elem.Foreground;
                 Skin.textField.focused.textColor = elem.Foreground;
                 Skin.settings.cursorColor = elem.Foreground;
+                Skin.textField.contentOffset = new(1f, 0f);
                 GUI.backgroundColor = elem.Background;
             }
 
@@ -884,7 +885,7 @@ namespace SGUI {
         public void StartGroup(SGroup group) {
             Vector2 position = group.InnerOrigin;
             PreparePosition(group, ref position);
-            Rect bounds = new Rect(position, group.Size);
+            Rect bounds = new Rect(position, group.InnerSize);
 
             GUI.backgroundColor = _Transparent;
             RegisterNextComponentIn(group);

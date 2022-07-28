@@ -134,11 +134,8 @@
     <Compile Include="LoadHelper.cs" />
     <Compile Include="ETGModMainBehaviour.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ETGMod\SGUI\DotNetEXT\BindingList.cs" />
     <Compile Include="ETGMod\SGUI\DotNetEXT\ICancelAddNew.cs" />
-    <Compile Include="ETGMod\SGUI\DotNetEXT\IBindingList.cs" />
     <Compile Include="ETGMod\SGUI\DotNetEXT\AddingNewEventHandler.cs" />
-    <Compile Include="ETGMod\SGUI\DotNetEXT\AddingNewEventArgs.cs" />
     <Compile Include="ETGMod\SGUI\DotNetEXT\IRaiseItemChangedEvents.cs" />
     <Compile Include="ETGMod\SGUI\ISGUIBackend.cs" />
     <!-- <Compile Include="ETGMod\SGUI\Backends\SGUIIMEditorBackend.cs" /> -->

@@ -94,14 +94,16 @@ internal class HarmonyPatches
                 {
                     act?.Invoke(__instance);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ETGModConsole.Log("An error occured when doing OnGameManagerAwake: " + ex);
                 }
             }
             ETGModMainBehaviour.OnGameManagerAwake.Clear();
         }
-        catch
+        catch(Exception ex)
         {
+            ETGModConsole.Log("An error occured when doing OnGameManagerAwake: " + ex);
         }
     }
 
@@ -129,14 +131,16 @@ internal class HarmonyPatches
                 {
                     act?.Invoke(__instance);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ETGModConsole.Log("An error occured when doing OnGameManagerStart: " + ex);
                 }
             }
             ETGModMainBehaviour.OnGameManagerStart.Clear();
         }
-        catch
+        catch (Exception ex)
         {
+            ETGModConsole.Log("An error occured when doing OnGameManagerStart: " + ex);
         }
     }
 
@@ -161,14 +165,16 @@ internal class HarmonyPatches
                 {
                     act?.Invoke(GameManager.Instance);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ETGModConsole.Log("An error occured when doing OnGameManagerAwake: " + ex);
                 }
             }
             ETGModMainBehaviour.OnGameManagerAwake.Clear();
         }
-        catch
+        catch (Exception ex)
         {
+            ETGModConsole.Log("An error occured when doing OnGameManagerAwake: " + ex);
         }
     }
 
@@ -195,14 +201,16 @@ internal class HarmonyPatches
                 {
                     act?.Invoke(GameManager.Instance);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ETGModConsole.Log("An error occured when doing OnGameManagerStart: " + ex);
                 }
             }
             ETGModMainBehaviour.OnGameManagerStart.Clear();
         }
-        catch
+        catch (Exception ex)
         {
+            ETGModConsole.Log("An error occured when doing OnGameManagerStart: " + ex);
         }
     }
 }

@@ -73,7 +73,8 @@ public class ETGModLoaderMenu : ETGModMenu
         for (int i = 0; i < info.Count; i++)
         {
             var mod = info[i];
-            ModListGroup.Children.Add(new SLabel($"{mod.Metadata.Name} {mod.Metadata.Version}"));
+            ModListGroup.Children.Add(new SLabel($"{mod.Metadata.Name} {mod.Metadata.Version}") {
+                With = { new SFadeInAnimation() }});
             yield return null;
         }
         yield break;
