@@ -6,7 +6,7 @@ namespace SGUI {
 
         public Vector2 IndividualSize = new Vector2(1f, 1f);
         public Vector2 Padding = new Vector2(0f, 0f);
-        public IntVector2 Count = new IntVector2(32, 32);
+        public Vector2 Count = new Vector2(32, 32);
 
         public bool IsCentered = true;
 
@@ -37,7 +37,7 @@ namespace SGUI {
         public SPreloader(Color color) {
             ColorCount = 1;
             Foreground = color;
-            TimeStart = Time.unscaledTime;
+            TimeStart = SGUIRoot.TimeUnscaled;
         }
 
         public override void UpdateStyle() {
@@ -53,27 +53,29 @@ namespace SGUI {
         }
 
         public override void Render() {
-            float t = Time.unscaledTime - TimeStart;
+            float t = SGUIRoot.TimeUnscaled - TimeStart;
             float dx = IndividualSize.x + Padding.x;
             float dy = IndividualSize.y + Padding.y;
             for (int y = 0; y < Count.y; y++) {
                 for (int x = 0; x < Count.x; x++) {
+                    Color color = Foreground;
+                    color.a *= Function((x + 0.5f) / Count.x, (y + 0.5f) / Count.y, t);
                     Draw.Texture(this, new Vector2(
                         dx * x,
                         dy * y
-                    ), IndividualSize, SGUIRoot.White, Foreground.WithAlpha(Foreground.a * Function((x + 0.5f) / Count.x, (y + 0.5f) / Count.y, t)));
+                    ), IndividualSize, SGUIRoot.White, color);
                 }
             }
         }
 
         internal readonly static Vector2 _V2_05_05 = new Vector2(0.5f, 0.5f);
-        internal static float _PSIN(float a) => 0.5f + 0.5f * Mathf.Sin(a);
+        internal static float _PSIN(float a) { return 0.5f + 0.5f * Mathf.Sin(a); }
         internal static float _SmoothStep(float a, float b, float x) {
             float t = Mathf.Clamp01((x - a) / (b - a));
             return t * t * (3f - (2f * t));
         }
-        internal static float _SS(float s, float r, float v) =>    _SmoothStep(s - r,     s + r,     v);
-        internal static float _SS(float s, float v         ) =>    _SmoothStep(s - 0.02f, s + 0.02f, v);
+        internal static float _SS(float s, float r, float v) { return _SmoothStep(s - r    , s + r    , v); }
+        internal static float _SS(float s, float v         ) { return _SmoothStep(s - 0.02f, s + 0.02f, v); }
 
 
         internal static float _Circle(Vector2 xy, float or, float ir) {

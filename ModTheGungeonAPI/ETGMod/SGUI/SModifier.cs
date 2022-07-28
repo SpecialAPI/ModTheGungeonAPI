@@ -26,17 +26,17 @@ namespace SGUI {
 
         public Action<SElement> OnInit;
         public override void Init() {
-            OnInit?.Invoke(Elem);
+            if (OnInit != null) OnInit(Elem);
         }
 
         public Action<SElement> OnUpdateStyle;
         public override void UpdateStyle() {
-            OnUpdateStyle?.Invoke(Elem);
+            if (OnUpdateStyle != null) OnUpdateStyle(Elem);
         }
 
         public Action<SElement> OnUpdate;
         public override void Update() {
-            OnUpdate?.Invoke(Elem);
+            if (OnUpdate != null) OnUpdate(Elem);
         }
 
     }

@@ -13,16 +13,16 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the line y = x
         /// </summary>
-        public static float Linear(float f) => f;
+        public static float Linear(float f) { return f; }
 
         /// <summary>
         /// Modeled after the parabola y = x^2
         /// </summary>
-        public static float QuadraticEaseIn(float f) => f * f;
+        public static float QuadraticEaseIn(float f) { return f * f; }
 
         /// <summary>
         /// Modeled after the parabola y = -x^2 + 2x
-        public static float QuadraticEaseOut(float f) => -(f * (f - 2f));
+        public static float QuadraticEaseOut(float f) { return -(f * (f - 2f)); }
 
         /// <summary>
         /// Modeled after the piecewise quadratic
@@ -41,7 +41,7 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the cubic y = x^3
         /// </summary>
-        public static float CubicEaseIn(float f) => f * f * f;
+        public static float CubicEaseIn(float f) { return f * f * f; }
 
         /// <summary>
         /// Modeled after the cubic y = (x - 1)^3 + 1
@@ -68,7 +68,7 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the quartic x^4
         /// </summary>
-        public static float QuarticEaseIn(float f) => f * f * f * f;
+        public static float QuarticEaseIn(float f) { return f * f * f * f; }
 
         /// <summary>
         /// Modeled after the quartic y = 1 - (x - 1)^4
@@ -95,7 +95,7 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the quintic y = x^5
         /// </summary>
-        public static float QuinticEaseIn(float f) => f * f * f * f * f;
+        public static float QuinticEaseIn(float f) { return f * f * f * f * f; }
 
         /// <summary>
         /// Modeled after the quintic y = (x - 1)^5 + 1
@@ -122,27 +122,27 @@ namespace SGUI {
         /// <summary>
         /// Modeled after quarter-cycle of sine wave
         /// </summary>
-        public static float SineEaseIn(float f) => Mathf.Sin((f - 1) * TAU) + 1;
+        public static float SineEaseIn(float f) { return Mathf.Sin((f - 1) * TAU) + 1; }
 
         /// <summary>
         /// Modeled after quarter-cycle of sine wave (different phase)
         /// </summary>
-        public static float SineEaseOut(float f) => Mathf.Sin(f * TAU);
+        public static float SineEaseOut(float f) { return Mathf.Sin(f * TAU); }
 
         /// <summary>
         /// Modeled after half sine wave
         /// </summary>
-        public static float SineEaseInOut(float f) => 0.5f * (1f - Mathf.Cos(f * Mathf.PI));
+        public static float SineEaseInOut(float f) { return 0.5f * (1f - Mathf.Cos(f * Mathf.PI)); }
 
         /// <summary>
         /// Modeled after shifted quadrant IV of unit circle
         /// </summary>
-        public static float CircularEaseIn(float f) => 1f - Mathf.Sqrt(1f - (f * f));
+        public static float CircularEaseIn(float f) { return 1f - Mathf.Sqrt(1f - (f * f)); }
 
         /// <summary>
         /// Modeled after shifted quadrant II of unit circle
         /// </summary>
-        public static float CircularEaseOut(float f) => Mathf.Sqrt((2f - f) * f);
+        public static float CircularEaseOut(float f) { return Mathf.Sqrt((2f - f) * f); }
 
         /// <summary>
         /// Modeled after the piecewise circular function
@@ -160,12 +160,12 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the exponential function y = 2^(10(x - 1))
         /// </summary>
-        public static float ExponentialEaseIn(float f) => (f <= 0f) ? 0f : Mathf.Pow(2f, 10f * (f - 1f));
+        public static float ExponentialEaseIn(float f) { return (f <= 0f) ? 0f : Mathf.Pow(2f, 10f * (f - 1f)); }
 
         /// <summary>
         /// Modeled after the exponential function y = -2^(-10x) + 1
         /// </summary>
-        public static float ExponentialEaseOut(float f) => (f >= 1f) ? f : 1f - Mathf.Pow(2f, -10f * f);
+        public static float ExponentialEaseOut(float f) { return (f >= 1f) ? f : 1f - Mathf.Pow(2f, -10f * f); }
 
         /// <summary>
         /// Modeled after the piecewise exponential
@@ -185,12 +185,12 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the damped sine wave y = sin(13pi/2*x)*pow(2, 10 * (x - 1))
         /// </summary>
-        public static float ElasticEaseIn(float f) => Mathf.Sin(13f * TAU * f) * Mathf.Pow(2f, 10f * (f - 1f));
+        public static float ElasticEaseIn(float f) { return Mathf.Sin(13f * TAU * f) * Mathf.Pow(2f, 10f * (f - 1f)); }
 
         /// <summary>
         /// Modeled after the damped sine wave y = sin(-13pi/2*(x + 1))*pow(2, -10x) + 1
         /// </summary>
-        public static float ElasticEaseOut(float f) => Mathf.Sin(-13f * TAU * (f + 1f)) * Mathf.Pow(2f, -10f * f) + 1f;
+        public static float ElasticEaseOut(float f) { return Mathf.Sin(-13f * TAU * (f + 1f)) * Mathf.Pow(2f, -10f * f) + 1f; }
 
         /// <summary>
         /// Modeled after the piecewise exponentially-damped sine wave:
@@ -208,7 +208,7 @@ namespace SGUI {
         /// <summary>
         /// Modeled after the overshooting cubic y = x^3-x*sin(x*pi)
         /// </summary>
-        public static float BackEaseIn(float f) => f * f * f - f * Mathf.Sin(f * Mathf.PI);
+        public static float BackEaseIn(float f) { return f * f * f - f * Mathf.Sin(f * Mathf.PI); }
 
         /// <summary>
         /// Modeled after overshooting cubic y = 1-((1-x)^3-(1-x)*sin((1-x)*pi))
@@ -233,7 +233,7 @@ namespace SGUI {
             }
         }
 
-        public static float BounceEaseIn(float f) => 1f - BounceEaseOut(1f - f);
+        public static float BounceEaseIn(float f) { return 1f - BounceEaseOut(1f - f); }
 
         public static float BounceEaseOut(float f) {
             if (f < 4f / 11f) {

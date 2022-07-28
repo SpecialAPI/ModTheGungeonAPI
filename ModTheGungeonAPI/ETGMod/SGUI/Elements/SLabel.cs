@@ -19,12 +19,12 @@ namespace SGUI {
         public TextAnchor Alignment = TextAnchor.MiddleLeft;
 
         public SLabel()
-            : this("") {  }
+            : this("") { }
         public SLabel(string text) {
             Text = text;
             ColorCount = 3;
             IconColor = Color.white;
-            Background = Background.WithAlpha(0f);
+            Background = Background * 0f;
         }
 
         public override void UpdateStyle() {

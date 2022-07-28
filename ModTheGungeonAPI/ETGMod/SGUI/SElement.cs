@@ -12,12 +12,12 @@ namespace SGUI {
 
         public ISGUIBackend Backend {
             get {
-                return Root.Backend;
+                return (Root ?? SGUIRoot.Main).Backend;
             }
         }
         public ISGUIBackend Draw /* sounds better than Renderer, shorter than Backend, doesn't conflict with Render */ {
             get {
-                return Root.Backend;
+                return (Root ?? SGUIRoot.Main).Backend;
             }
         }
 
@@ -26,6 +26,28 @@ namespace SGUI {
                 SElement parent = this;
                 while ((parent = parent.Parent) != null) { }
                 return parent ?? this;
+            }
+        }
+
+        public SElement Previous {
+            get {
+                if (Parent == null)
+                    return null;
+                int i = Parent.Children.IndexOf(this) - 1;
+                if (i < 0 || Parent.Children.Count <= i)
+                    return null;
+                return Parent.Children[i];
+            }
+        }
+
+        public SElement Next {
+            get {
+                if (Parent == null)
+                    return null;
+                int i = Parent.Children.IndexOf(this) + 1;
+                if (i < 0 || Parent.Children.Count <= i)
+                    return null;
+                return Parent.Children[i];
             }
         }
 
@@ -142,16 +164,21 @@ namespace SGUI {
 
         public bool IsFocused { get; protected set; }
 
-        public bool IsHovered { get; protected set; } = true;
-        public bool WasHovered { get; protected set; } = true;
-        public EMouseStatus MouseStatus { get; protected set; } = EMouseStatus.Inside;
-        public EMouseStatus MouseStatusPrev { get; protected set; } = EMouseStatus.Inside;
+        public bool IsHovered { get; protected set; }
+        public bool WasHovered { get; protected set; }
+        public EMouseStatus MouseStatus { get; protected set; }
+        public EMouseStatus MouseStatusPrev { get; protected set; }
 
         public Action<SElement> OnUpdateStyle;
 
         public Action<SElement, EMouseStatus, Vector2> OnMouse;
 
         public SElement() {
+            IsHovered = true;
+            WasHovered = true;
+            MouseStatus = EMouseStatus.Inside;
+            MouseStatusPrev = EMouseStatus.Inside;
+
             Children.ListChanged += HandleChange;
             Modifiers.ListChanged += HandleModifierChange;
             if (SGUIRoot.Main != null) {
@@ -162,8 +189,9 @@ namespace SGUI {
         }
 
         public virtual void HandleChange(object sender, ListChangedEventArgs e) {
-            Parent?.HandleChange(null, null);
-            UpdateStyle();
+            if (Parent != null && Parent.Enabled) Parent.HandleChange(null, null);
+            if (Enabled)
+                UpdateStyle();
 
             if (sender == null || e == null) return;
 
@@ -175,7 +203,8 @@ namespace SGUI {
                     if (0 <= disposeIndex) {
                         Root.DisposingChildren.RemoveAt(disposeIndex);
                     }
-                    child.UpdateStyle();
+                    if (child.Enabled)
+                        child.UpdateStyle();
 
                 } else if (e.ListChangedType == ListChangedType.ItemDeleted) {
                     // TODO Dispose.
@@ -204,7 +233,7 @@ namespace SGUI {
         }
         public void Fill(float padding = 16f) {
             Position = new Vector2(padding, padding);
-            Size = (Parent?.Size ?? Root.Size) - Position * 2f;
+            Size = ((Parent == null ? new Vector2?() : Parent.InnerSize) ?? Root.Size) - Position * 2f;
         }
 
         public virtual void UpdateStyle() {
@@ -216,18 +245,22 @@ namespace SGUI {
                 Foreground.g == SGUIRoot.Main.Foreground.g &&
                 Foreground.b == SGUIRoot.Main.Foreground.b
             ) {
-                Foreground = SGUIRoot.Main.Foreground.WithAlpha(Foreground.a);
+                Color color = SGUIRoot.Main.Foreground;
+                color.a = Foreground.a;
+                Foreground = color;
             }
             if (
                 Background.r == SGUIRoot.Main.Background.r &&
                 Background.g == SGUIRoot.Main.Background.g &&
                 Background.b == SGUIRoot.Main.Background.b
             ) {
-                Background = SGUIRoot.Main.Background.WithAlpha(Background.a);
+                Color color = SGUIRoot.Main.Background;
+                color.a = Background.a;
+                Background = color;
             }
 
             Modifiers.ForEach(_ModifierUpdateStyle);
-            OnUpdateStyle?.Invoke(this);
+            if (OnUpdateStyle != null) OnUpdateStyle(this);
             UpdateChildrenStyles();
         }
         protected void _ModifierUpdateStyle(SModifier modifier) {
@@ -239,7 +272,8 @@ namespace SGUI {
                 SElement child = Children[i];
                 child.Root = Root;
                 child.Parent = this;
-                child.UpdateStyle();
+                if (child.Enabled)
+                    child.UpdateStyle();
             }
         }
 
@@ -256,7 +290,8 @@ namespace SGUI {
                 SElement child = Children[i];
                 child.Root = Root;
                 child.Parent = this;
-                child.Update();
+                if (child.Enabled)
+                    child.Update();
             }
         }
 
@@ -283,14 +318,14 @@ namespace SGUI {
             Remove();
         }
         public virtual void Remove() {
-            (Parent?.Children ?? Root.Children).Remove(this);
+            ((Parent == null ? null : Parent.Children) ?? Root.Children).Remove(this);
         }
 
         public virtual void Focus() {
         }
 
         public virtual void MouseStatusChanged(EMouseStatus e, Vector2 pos) {
-            OnMouse?.Invoke(this, e, pos);
+            if (OnMouse != null) OnMouse(this, e, pos);
         }
 
         public virtual void SetFocused(int secret, bool value) {

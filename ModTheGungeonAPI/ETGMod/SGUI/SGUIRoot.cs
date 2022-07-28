@@ -3,10 +3,37 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace SGUI {
-    public class SGUIRoot : MonoBehaviour {
+    public class SGUIRootBehaviour : MonoBehaviour {
+        public SGUIRoot Root = new SGUIRoot();
+        public void Awake() {
+            DontDestroyOnLoad(gameObject);
+            Root.Awake();
+        }
+        public void Start() {
+            Root.Start();
+            useGUILayout = Root.Backend.RenderOnGUI && Root.Backend.RenderOnGUILayout;
+        }
+        public void Update() { Root.Update(); }
+        public void OnGUI() { Root.OnGUI(); }
+    }
+
+    public class SGUIRoot {
 
         public static SGUIRoot Main;
         public ISGUIBackend Backend;
+
+        public static float Time {
+            get {
+                return Application.isEditor ? UnityEngine.Time.realtimeSinceStartup : UnityEngine.Time.time;
+            }
+        }
+        public static float TimeUnscaled {
+            get {
+                return Application.isEditor ? UnityEngine.Time.realtimeSinceStartup : UnityEngine.Time.unscaledTime;
+            }
+        }
+
+        public bool Visible = true;
 
         public readonly BindingList<SElement> Children = new BindingList<SElement>();
         public readonly List<SElement> AdoptedChildren = new List<SElement>();
@@ -40,46 +67,76 @@ namespace SGUI {
             }
         }
 
+        protected Vector2? OverrideSize;
         public Vector2 Size {
             get {
-                return new Vector2(Screen.width, Screen.height);
+                return OverrideSize ?? new Vector2(Screen.width, Screen.height);
+            }
+            set {
+                OverrideSize = value;
             }
         }
 
-        public static Texture2D White;
+        protected static Texture2D _White;
+        public static Texture2D White {
+            get {
+                if (_White != null) return _White;
+
+                _White = new Texture2D(1, 1);
+                _White.SetPixel(0, 0, Color.white);
+                _White.Apply();
+                return _White;
+            }
+        }
         /// <summary>
         /// Order of textures depending on backend. For SGUI-IM: Normal, active, hover, focused.
         /// </summary>
         public Texture2D[] TextFieldBackground;
 
-        public static void Setup() {
-            Main = new GameObject("WTFGUI Root").AddComponent<SGUIRoot>();
-            Main.Backend = new SGUIIMBackend();
+        public bool InEditor;
+
+        public SGUIRoot()
+            : this(false) {
+        }
+
+        public SGUIRoot(bool inEditor) {
+            InEditor = inEditor;
+
+            // if (inEditor) {
+            //     Backend = new SGUIIMEditorBackend();
+            //     Awake();
+            //     Start();
+            // } else {
+                Backend = new SGUIIMBackend();
+            // }
+        }
+
+        public static SGUIRoot Setup() {
+            return Main = new GameObject("SGUI Root").AddComponent<SGUIRootBehaviour>().Root;
+        }
+
+        public static SGUIRoot SetupEditor() {
+            return Main = new SGUIRoot(true);
         }
 
         public void Awake() {
-            DontDestroyOnLoad(gameObject);
+            Main = this;
 
             Children.ListChanged += HandleChange;
 
             Foreground = new Color(1f, 1f, 1f, 1f);
             Background = new Color(0f, 0f, 0f, 0.85f);
 
-            if (White == null) {
-                White = new Texture2D(1, 1);
-                White.SetPixel(0, 0, Color.white);
-                White.Apply();
-            }
             TextFieldBackground = new Texture2D[] { White, White, White, White };
         }
 
         public void Start() {
+            Main = this;
+
             if (!Backend.RenderOnGUI) {
                 Backend.Init();
-                useGUILayout = false;
             } else {
                 _ScheduledBackendInit = true;
-                useGUILayout = Backend.RenderOnGUILayout;
             }
         }
 
@@ -93,7 +150,8 @@ namespace SGUI {
                     // TODO individual scheduled updates
                     _ScheduledUpdateStyle = true;
                 } else {
-                    child.UpdateStyle();
+                    if (child.Enabled)
+                        child.UpdateStyle();
                 }
                 int disposeIndex = DisposingChildren.IndexOf(child);
                 if (0 <= disposeIndex) {
@@ -112,15 +170,21 @@ namespace SGUI {
                 _ScheduledUpdateStyle = true;
                 return;
             }
+            Main = this;
             for (int i = 0; i < Children.Count; i++) {
                 SElement child = Children[i];
                 child.Root = this;
                 child.Parent = null;
-                child.UpdateStyle();
+                if (child.Enabled)
+                    child.UpdateStyle();
             }
         }
 
         public void Update() {
+            if (!Visible)
+                return;
+
+            Main = this;
             if (!Backend.Initialized) {
                 return;
             }
@@ -129,7 +193,8 @@ namespace SGUI {
                 SElement child = Children[i];
                 child.Root = this;
                 child.Parent = null;
-                child.Update();
+                if (child.Enabled)
+                    child.Update();
             }
 
             if (AdoptedChildren.Count != 0) {
@@ -156,6 +221,10 @@ namespace SGUI {
 
         protected bool _ScheduledBackendInit;
         public void OnGUI() {
+            if (!Visible)
+                return;
+
+            Main = this;
             if (!Backend.RenderOnGUI) {
                 return;
             }

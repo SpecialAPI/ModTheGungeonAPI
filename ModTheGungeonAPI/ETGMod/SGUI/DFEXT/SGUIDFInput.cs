@@ -2,6 +2,7 @@
 using UnityEngine;
 
 namespace SGUI {
+#if SGUI_DaikonForge
     public class SGUIDFInput : IInputAdapter {
 
         protected readonly static Vector2 NULLV2 = new Vector2(-1, -1);
@@ -65,4 +66,5 @@ namespace SGUI {
         }
 
     }
+#endif
 }
