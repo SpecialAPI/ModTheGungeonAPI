@@ -749,7 +749,7 @@ namespace SGUI {
                 Skin.textField.hover.textColor = elem.Foreground;
                 Skin.textField.focused.textColor = elem.Foreground;
                 Skin.settings.cursorColor = elem.Foreground;
-                Skin.textField.contentOffset = new(1f, 0f);
+                Skin.textField.contentOffset = new(3f, 0f);
                 GUI.backgroundColor = elem.Background;
             }
 
