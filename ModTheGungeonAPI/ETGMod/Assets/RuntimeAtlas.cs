@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
+/// <summary>
+/// Used for creating new spritesheets at runtime.
+/// </summary>
 public class RuntimeAtlasPacker
 {
     public List<RuntimeAtlasPage> Pages = new List<RuntimeAtlasPage>();
@@ -24,6 +27,12 @@ public class RuntimeAtlasPacker
         Padding = padding;
     }
 
+    /// <summary>
+    /// Adds the texture to a new spritesheet and returns a RuntimeAtlasSegment that represents that texture.
+    /// </summary>
+    /// <param name="tex">Texture to add to a spritesheet.</param>
+    /// <param name="apply">If true, the changes will be automatically applied to the texture. Not recommended, as applying every change is not effective and creates lag. All of the changes will be automatically applied at the end of the frame</param>
+    /// <returns></returns>
     public RuntimeAtlasSegment Pack(Texture2D tex, bool apply = false)
     {
         RuntimeAtlasSegment segment;
@@ -71,6 +80,9 @@ public class RuntimeAtlasPacker
     }
 }
 
+/// <summary>
+/// Represents a spritesheet created by RuntimeAtlasPacker
+/// </summary>
 public class RuntimeAtlasPage
 {
     public static int DefaultSize = Math.Min(SystemInfo.maxTextureSize, 4096);
@@ -188,6 +200,9 @@ public class RuntimeAtlasPage
     }
 }
 
+/// <summary>
+/// Represents a texture within a RuntimeAtlasPage spritesheet.
+/// </summary>
 public class RuntimeAtlasSegment
 {
     public Texture2D texture;

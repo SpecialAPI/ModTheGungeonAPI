@@ -18,44 +18,52 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Release\ModTheGungeonAPI.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\0Harmony.dll</HintPath>
+      <HintPath>..\Dependencies\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\Dependencies\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\Dependencies\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\BepInEx.dll</HintPath>
+      <HintPath>..\Dependencies\BepInEx.dll</HintPath>
     </Reference>
     <Reference Include="Ionic.Zip, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <HintPath>packages\Ionic.Zip.1.9.1.8\lib\Ionic.Zip.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\Mono.Cecil.dll</HintPath>
+      <HintPath>..\Dependencies\Mono.Cecil.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod.RuntimeDetour">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\MonoMod.RuntimeDetour.dll</HintPath>
+      <HintPath>..\Dependencies\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod.Utils">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\MonoMod.Utils.dll</HintPath>
+      <HintPath>..\Dependencies\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="PlayMaker">
+      <HintPath>..\Dependencies\PlayMaker.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -64,35 +72,64 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>..\Dependencies\UnityEngine.AnimationModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>..\Dependencies\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputModule">
+      <HintPath>..\Dependencies\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>..\Dependencies\UnityEngine.ParticleSystemModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SharedInternalsModule">
+      <HintPath>..\Dependencies\UnityEngine.SharedInternalsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\..\Documents\ModDependencies_bie\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>..\Dependencies\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+      <HintPath>..\Dependencies\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>..\Dependencies\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestTextureModule">
+      <HintPath>..\Dependencies\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule">
+      <HintPath>..\Dependencies\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ETGMod\Assets\Assets.cs" />
     <Compile Include="ETGMod\Assets\Data.cs" />
     <Compile Include="ETGMod\Assets\RuntimeAtlas.cs" />
+    <Compile Include="ETGMod\Compatibility\EnumExtension.cs" />
+    <Compile Include="ETGMod\Compatibility\GuidInfo.cs" />
+    <Compile Include="ETGMod\Compatibility\SharedData.cs" />
     <Compile Include="ETGMod\Databases\ItemDB.cs" />
     <Compile Include="ETGMod\Databases\StringDB.cs" />
     <Compile Include="ETGMod\ETGGUI\AutocompletionSettings.cs" />
     <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommand.cs" />
     <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommandGroup.cs" />
     <Compile Include="ETGMod\ETGGUI\ConsoleCommand\ConsoleCommandUnit.cs" />
-    <Compile Include="ETGMod\ETGGUI\ETGDamageIndicatorGUI.cs" />
     <Compile Include="ETGMod\ETGGUI\ETGModConsole.cs" />
     <Compile Include="ETGMod\ETGGUI\ETGModDebugLogMenu.cs" />
     <Compile Include="ETGMod\ETGGUI\ETGModGUI.cs" />
@@ -100,7 +137,6 @@
     <Compile Include="ETGMod\ETGGUI\FontConverter.cs" />
     <Compile Include="ETGMod\ETGGUI\IETGModMenu.cs" />
     <Compile Include="ETGMod\ETGMod.cs" />
-    <Compile Include="ETGMod\ETGModUnityEngineHooks.cs" />
     <Compile Include="ETGMod\Extensions\Extensions.cs" />
     <Compile Include="ETGMod\Extensions\GunExt.cs" />
     <Compile Include="ETGMod\GunAnimationSpriteCache.cs" />
@@ -172,6 +208,9 @@
     <EmbeddedResource Include="Content\items.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -4,33 +4,51 @@ using HarmonyLib;
 using SGUI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
 
+/// <summary>
+/// The main behaviour of MTG API.
+/// </summary>
 [HarmonyPatch]
 [BepInPlugin(GUID, NAME, VERSION)]
 public class ETGModMainBehaviour : BaseUnityPlugin
 {
     public const string GUID = "etgmodding.etg.mtgapi";
     public const string NAME = "Mod the Gungeon API";
-    public const string VERSION = "1.3.0";
+    /// <summary>
+    /// The current version of the MTG API.
+    /// </summary>
+    public const string VERSION = "1.4.0";
+    /// <summary>
+    /// Current instance of the MTG API behaviour.
+    /// </summary>
     public static ETGModMainBehaviour Instance;
-    public readonly static List<Action<GameManager>> OnGameManagerAwake = new();
-    public readonly static List<Action<GameManager>> OnGameManagerStart = new();
+    internal readonly static List<Action<GameManager>> OnGameManagerAwake = new();
+    internal readonly static List<Action<GameManager>> OnGameManagerStart = new();
+    internal static Harmony harmony;
+
+    public static void EnsureHarmonyInitialized()
+    {
+        if(harmony != null)
+        {
+            return;
+        }
+        (harmony = new Harmony(GUID)).PatchAll();
+    }
 
     public void Awake()
     {
         Instance = this;
+        EnsureHarmonyInitialized();
         if (GameManager.HasInstance && GameUIRoot.Instance != null)
         {
             HarmonyPatches.AddLevelLoadListener(GameManager.Instance);
             HarmonyPatches.InvokeOnAwakeBehaviours(GameManager.Instance);
             HarmonyPatches.InvokeOnStartBehaviours(GameManager.Instance);
         }
-        new Harmony(GUID).PatchAll();
-        ETGMod.StartGlobalCoroutine = StartCoroutine;
-        ETGMod.StopGlobalCoroutine = StopCoroutine;
         Gungeon.Game.Initialize();
         Application.logMessageReceived += ETGModDebugLogMenu.Logger;
         SGUIIMBackend.GetFont = (SGUIIMBackend backend) => FontConverter.GetFontFromdfFont((dfFont)dfControl.ActiveInstances[0].GUIManager.DefaultFont, 2);
@@ -38,8 +56,17 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         ETGModGUI.Create();
         ETGModGUI.Start();
         ETGMod.Assets.SetupSpritesFromFolder(ETGMod.SpriteReplacementDirectory);
+        var dirs = Directory.GetDirectories(Paths.PluginPath, "sprites", SearchOption.AllDirectories);
+        foreach(var dir in dirs)
+        {
+            ETGMod.Assets.SetupSpritesFromFolder(dir);
+        }
     }
 
+    /// <summary>
+    /// Delays the given action until both GameManager and GameUIRoot exist and one of them is running Start().
+    /// </summary>
+    /// <param name="onStart">The action to delay.</param>
     public static void WaitForGameManagerStart(Action<GameManager> onStart)
     {
         if(GameManager.HasInstance && GameUIRoot.Instance != null)
@@ -52,6 +79,10 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         }
     }
 
+    /// <summary>
+    /// Delays the given action until both GameManager and GameUIRoot exist and one of them is running Awake().
+    /// </summary>
+    /// <param name="onAwake">The action to delay.</param>
     public static void WaitForGameManagerAwake(Action<GameManager> onAwake)
     {
         if(GameManager.HasInstance && GameUIRoot.Instance != null)
@@ -64,7 +95,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         }
     }
 
-    public void Update()
+    private void Update()
     {
         ETGMod.Assets.Packer.Apply();
         if (GameManager.HasInstance && GameManager.Instance.AllPlayers != null)
@@ -223,13 +254,9 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         }
     }
 
-    public void Start()
-    {
-    }
-
     [HarmonyPatch(typeof(MainMenuFoyerController), nameof(MainMenuFoyerController.Awake))]
     [HarmonyPostfix]
-    public static void AddToVersion(MainMenuFoyerController __instance)
+    private static void AddToVersion(MainMenuFoyerController __instance)
     {
         __instance.VersionLabel.Text += $" | BepInEx {typeof(Paths).Assembly.GetName().Version} | Modding API {VERSION}";
     }

@@ -31,68 +31,21 @@ public class ETGModConsole : ETGModMenu
     List<string> lastCommands = new List<string>();
     private string lastVal = string.Empty;
     private int currentCommandIndex = -1;
-    public static readonly Dictionary<string, string> CommandDescriptions = new()
-    {
-        { "help", "Shows all commands and shows descriptions for commands that have them" },
-        { "tp", "Teleports the player to the given coordinates. Coordinates are measured in tiles" },
-        { "rtp", "Teleports the player to the given coordinates, relative to the player's current position. Coordinates are measured in tiles" },
-        { "clear", "Clears all of the messages in the console" },
-        { "character", "Switches the player to the given character. Doing so will make the player lose all of the items and guns" },
-        { "spawn", "Spawns the given object in a random spot in the current room. If the second argument is a number, that number will represent the amount of objects to spawn" },
-        { "godmode", "Toggles godmode. While in godmode, the player is unable to take any damage, other than damage from falling into pits" },
-        { "quick_kill", "Toggles quick kill. While quick kill is active, all of the enemies in the player's room will instantly die" },
-        { "instant_charge", "Toggles instant recharge. While instant recharge is active, the player's active item will instantly recharge after being used" },
-        { "high_damage", "Toggles high damage. While high damage is active, the player's damage multiplier will be increased by a lot, to the point of instantly killing most enemies and bosses in the game" },
-        { "no_curse", "Toggles no curse. While no curse is active, the player's curse will be set to 0, preventing any of curse's effects from working" },
-        { "perfect_aim", "Toggles perfect aim. While perfect aim is active, the spread on the player's guns will be completely negated" },
-        { "infinite_ammo", "Toggles infinite ammo. While infinite ammo is active, all of the player's guns will have infinite ammo, similarly to being in Magazine Rack's aura" },
-        { "flight", "Toggles flight. While flight is active, the player will have flight" },
-        { "no_clip", "Toggles no clip. While no clip is active, the player will be unable to collide with anything, be it walls, enemies or projectiles" },
-        { "reveal_floor", "Reveals all rooms on the floor, including secret rooms" },
-        { "visit_all_rooms", "Reveals all rooms on the floor and makes them act as if the player has visited them, allowing the player to teleport to them even if they haven't been cleared yet" },
-        { "add_teleporters", "Adds a teleporter to every room on the floor that doesn't have one, even to boss rooms" },
-        { "load_level", "Teleports the player to the given floor" },
-        { "godmode value", "Shows if godmode is currently active" },
-        { "quick_kill value", "Shows if quick kill is currently active" },
-        { "instant_charge value", "Shows if instant recharge is currently active" },
-        { "high_damage value", "Shows if high damage is currently active" },
-        { "no_curse value", "Shows if no curse is currently active" },
-        { "perfect_aim value", "Shows if perfect aim is currently active" },
-        { "infinite_ammo value", "Shows if infinite ammo is currently active" },
-        { "flight value", "Shows if flight is currently active" },
-        { "no_clip value", "Shows if no clip is currently active" },
-        { "load_level show_dictionary", "Shows all levels possible to load, as well as the internal names of currently available levels" },
-        { "load_level ignore_dictionary", "Loads a level ignoring the level dictionary, forcing the player to enter the level's internal name. Useful for mod developers" },
-        { "load_level ignore_dictionary glitched", "Loads a level under the effect of a glitched chest ignoring the level dictionary, forcing the player to enter the level's internal name. Useful for mod developers" },
-        { "load_level glitched", "Loads a level under the effect of a glitched chest." },
-        { "spawn chest", "Spawns a chest of the given type in a random spot near the player. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
-        { "spawn item", "Spawns the given item on the ground. If the second argument is a number, that number will represent the amount of items to spawn" },
-        { "spawn shrine", "Spawns a shrine near the player" },
-        { "spawn npc", "Spawns an npc near the player" },
-        { "spawn chest all_guns", "Spawns a chest of the given type in a random spot near the player. The chest will always have a gun in it. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
-        { "spawn chest all_items", "Spawns a chest of the given type in a random spot near the player. The chest will always have an item in it. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
-        { "give", "Gives the player an item. If the second argument is a number, that number will represent the amount of items to give" },
-        { "tracked_stat", "The group for getting, setting and adding to tracked stats" },
-        { "tracked_stat list", "Lists all available tracked stats" },
-        { "tracked_stat get", "Gets the current value of a tracked stat. Will show the value for the current character, for the current session and also for the whole save file"},
-        { "tracked_stat add", "Adds the given value to the current value of a tracked stat" },
-        { "tracked_stat set", "Sets the given tracked stat's value to the given value" },
-        { "stat", "The group for getting, setting, multiplying and adding to the player's stats" },
-        { "stat get", "Gets the current value of a player's stat" },
-        { "stat set", "Makes the given stat's value equal the given value"},
-        { "stat set_exact", "Sets the given stat's base value to the given value. This means that the stat's value will equal the given value in addition to all other stat modifiers" },
-        { "stat add", "Adds the given value to the current value of the given stat" },
-        { "stat multiply", "Multiplies the given stat's current value by the given value" },
-        { "stat remove_0_multipliers", "Remove all ownerless stat multipliers (doesn't remove multipliers given by items) that multiply a stat's value by 0" },
-        { "skiplevel", "Skips the player to the next level" },
-        { "charselect", "Returns the player to breach's character select screen" },
-        { "conf", "The group for configuring various things" },
-        { "conf close_console_on_command", "Switches whether the console should be closed when a command is entered. Default: false" },
-        { "conf close_console_on_command value", "Shows if the console should be closed when a command is entered." }
-    };
+    /// <summary>
+    /// A dictionary where the keys are the ingame names for modded chests and the values are modded chest objects. Add to this dictionary when adding new chests for them to be supported by chest autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, Chest> ModdedChests = new();
+    /// <summary>
+    /// A dictionary where the keys are the ingame names for modded shrines and the values are modded shrine objects. Add to this dictionary when adding new shrines for them to be supported by shrine autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, GameObject> ModdedShrines = new();
+    /// <summary>
+    /// A dictionary where the keys are the ingame names for modded NPCs and the values are the modded NPC objects. Add to this dictionary when adding new NPCs for them to be supported by NPC autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, GameObject> ModdedNPCs = new();
+    /// <summary>
+    /// An array with all of the names for basegame chests.
+    /// </summary>
     public static readonly string[] BaseGameChests = new string[]
     {
         "brown",
@@ -112,7 +65,10 @@ public class ETGModConsole : ETGModMenu
         "mirror"
     };
 
-    public static string[] BaseGameShrines = new string[]
+    /// <summary>
+    /// An array with all of the internal names for basegame shrines.
+    /// </summary>
+    public static readonly string[] BaseGameShrines = new string[]
         {
             "shrine_ammo",
             "shrine_beholster",
@@ -131,7 +87,10 @@ public class ETGModConsole : ETGModMenu
             "shrine_yv"
         };
 
-    public static Dictionary<string, string> BaseGameNPCs = new()
+    /// <summary>
+    /// The dictionary where the keys are the ingame names for NPCs and the values are the internal names for NPC objects. It is not recommended to add to this dictionary, use the ModdedNPCs dictionary instead.
+    /// </summary>
+    public static readonly Dictionary<string, string> BaseGameNPCs = new()
     {
         { "bowler", "npc_bowler" },
         { "daisuke", "npc_daisuke" },
@@ -154,7 +113,9 @@ public class ETGModConsole : ETGModMenu
         { "vampire", "npc_vampire" }
     };
 
-
+    /// <summary>
+    /// The dictionary where the keys are the ingame names for floors and the values are the internal names for dungeon asset paths. Add to this dictionary when adding new floors for them to be supported by level autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, string> DungeonDictionary = new Dictionary<string, string>
         {
             { "keep", "tt_castle" },
@@ -215,6 +176,9 @@ public class ETGModConsole : ETGModMenu
             { "coop_past", "fs_coop" },
         };
 
+    /// <summary>
+    /// The dictionary where the keys are the ingame names for stats and the values are PlayerStats.StatType enum values. Add to this dictionary when adding new stats for them to be supported by stat autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, PlayerStats.StatType> PlayerStatDictionary = new()
     {
         { "move_speed", PlayerStats.StatType.MovementSpeed },
@@ -248,6 +212,9 @@ public class ETGModConsole : ETGModMenu
         { "money_drop_mult", PlayerStats.StatType.MoneyMultiplierFromEnemies },
     };
 
+    /// <summary>
+    /// The dictionary where the strings are the ingame names for characters and the values are the internal names for character objects. Add to this dictionary when adding new characters for them to be supported by character autocompletion.
+    /// </summary>
     public static readonly Dictionary<string, string> Characters = new()
     {
         { "pilot", "rogue" },
@@ -278,6 +245,70 @@ public class ETGModConsole : ETGModMenu
         Log("Command or group " + args[0] + " doesn't exist");
     });
 
+
+    /// <summary>
+    /// The dictionary where the keys are commands and the values are command descriptions. Add to this dictionary if you want your commands to have descriptions in the help command.
+    /// </summary>
+    public static readonly Dictionary<string, string> CommandDescriptions = new()
+    {
+        { "help", "Shows all commands and shows descriptions for commands that have them" },
+        { "tp", "Teleports the player to the given coordinates. Coordinates are measured in tiles" },
+        { "rtp", "Teleports the player to the given coordinates, relative to the player's current position. Coordinates are measured in tiles" },
+        { "clear", "Clears all of the messages in the console" },
+        { "character", "Switches the player to the given character. Doing so will make the player lose all of the items and guns" },
+        { "spawn", "Spawns the given object in a random spot in the current room. If the second argument is a number, that number will represent the amount of objects to spawn" },
+        { "godmode", "Toggles godmode. While in godmode, the player is unable to take any damage, other than damage from falling into pits" },
+        { "quick_kill", "Toggles quick kill. While quick kill is active, all of the enemies in the player's room will instantly die" },
+        { "instant_charge", "Toggles instant recharge. While instant recharge is active, the player's active item will instantly recharge after being used" },
+        { "high_damage", "Toggles high damage. While high damage is active, the player's damage multiplier will be increased by a lot, to the point of instantly killing most enemies and bosses in the game" },
+        { "no_curse", "Toggles no curse. While no curse is active, the player's curse will be set to 0, preventing any of curse's effects from working" },
+        { "perfect_aim", "Toggles perfect aim. While perfect aim is active, the spread on the player's guns will be completely negated" },
+        { "infinite_ammo", "Toggles infinite ammo. While infinite ammo is active, all of the player's guns will have infinite ammo, similarly to being in Magazine Rack's aura" },
+        { "flight", "Toggles flight. While flight is active, the player will have flight" },
+        { "no_clip", "Toggles no clip. While no clip is active, the player will be unable to collide with anything, be it walls, enemies or projectiles" },
+        { "reveal_floor", "Reveals all rooms on the floor, including secret rooms" },
+        { "visit_all_rooms", "Reveals all rooms on the floor and makes them act as if the player has visited them, allowing the player to teleport to them even if they haven't been cleared yet" },
+        { "add_teleporters", "Adds a teleporter to every room on the floor that doesn't have one, even to boss rooms" },
+        { "load_level", "Teleports the player to the given floor" },
+        { "godmode value", "Shows if godmode is currently active" },
+        { "quick_kill value", "Shows if quick kill is currently active" },
+        { "instant_charge value", "Shows if instant recharge is currently active" },
+        { "high_damage value", "Shows if high damage is currently active" },
+        { "no_curse value", "Shows if no curse is currently active" },
+        { "perfect_aim value", "Shows if perfect aim is currently active" },
+        { "infinite_ammo value", "Shows if infinite ammo is currently active" },
+        { "flight value", "Shows if flight is currently active" },
+        { "no_clip value", "Shows if no clip is currently active" },
+        { "load_level show_dictionary", "Shows all levels possible to load, as well as the internal names of currently available levels" },
+        { "load_level ignore_dictionary", "Loads a level ignoring the level dictionary, forcing the player to enter the level's internal name. Useful for mod developers" },
+        { "load_level ignore_dictionary glitched", "Loads a level under the effect of a glitched chest ignoring the level dictionary, forcing the player to enter the level's internal name. Useful for mod developers" },
+        { "load_level glitched", "Loads a level under the effect of a glitched chest." },
+        { "spawn chest", "Spawns a chest of the given type in a random spot near the player. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
+        { "spawn item", "Spawns the given item on the ground. If the second argument is a number, that number will represent the amount of items to spawn" },
+        { "spawn shrine", "Spawns a shrine near the player" },
+        { "spawn npc", "Spawns an npc near the player" },
+        { "spawn chest all_guns", "Spawns a chest of the given type in a random spot near the player. The chest will always have a gun in it. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
+        { "spawn chest all_items", "Spawns a chest of the given type in a random spot near the player. The chest will always have an item in it. Additional arguments can represent if the chest should be locked or become a mimic and also can represent the number of chests to spawn" },
+        { "give", "Gives the player an item. If the second argument is a number, that number will represent the amount of items to give" },
+        { "tracked_stat", "The group for getting, setting and adding to tracked stats" },
+        { "tracked_stat list", "Lists all available tracked stats" },
+        { "tracked_stat get", "Gets the current value of a tracked stat. Will show the value for the current character, for the current session and also for the whole save file" },
+        { "tracked_stat add", "Adds the given value to the current value of a tracked stat" },
+        { "tracked_stat set", "Sets the given tracked stat's value to the given value" },
+        { "stat", "The group for getting, setting, multiplying and adding to the player's stats" },
+        { "stat get", "Gets the current value of a player's stat" },
+        { "stat set", "Makes the given stat's value equal the given value" },
+        { "stat set_exact", "Sets the given stat's base value to the given value. This means that the stat's value will equal the given value in addition to all other stat modifiers" },
+        { "stat add", "Adds the given value to the current value of the given stat" },
+        { "stat multiply", "Multiplies the given stat's current value by the given value" },
+        { "stat remove_0_multipliers", "Remove all ownerless stat multipliers (doesn't remove multipliers given by items) that multiply a stat's value by 0" },
+        { "skiplevel", "Skips the player to the next level" },
+        { "charselect", "Returns the player to breach's character select screen" },
+        { "conf", "The group for configuring various things" },
+        { "conf close_console_on_command", "Switches whether the console should be closed when a command is entered. Default: false" },
+        { "conf close_console_on_command value", "Shows if the console should be closed when a command is entered." }
+    };
+
     /// <summary>
     /// All items in the game, name sorted. Used for the give command.
     /// </summary>
@@ -290,7 +321,10 @@ public class ETGModConsole : ETGModMenu
 
     protected static char[] _SplitArgsCharacters = { ' ' };
 
-    public static AutocompletionSettings GiveAutocompletionSettings = new(input =>
+    /// <summary>
+    /// The basic autocompletion settings for items.
+    /// </summary>
+    public static readonly AutocompletionSettings GiveAutocompletionSettings = new(input =>
     {
         List<string> ret = new();
         foreach (string key in Game.Items.IDs)
@@ -303,7 +337,10 @@ public class ETGModConsole : ETGModMenu
         return ret.ToArray();
     });
 
-    public static AutocompletionSettings SpawnAutocompletionSettings = new(input =>
+    /// <summary>
+    /// The basic autocompletion settings for enemies.
+    /// </summary>
+    public static readonly AutocompletionSettings SpawnAutocompletionSettings = new(input =>
     {
         List<string> ret = new();
         foreach (string key in Game.Enemies.IDs)
@@ -316,7 +353,10 @@ public class ETGModConsole : ETGModMenu
         return ret.ToArray();
     });
 
-    public static AutocompletionSettings TrackedStatAutocompletionSettings = new(input =>
+    /// <summary>
+    /// The basic autocompletion for tracked stats.
+    /// </summary>
+    public static readonly AutocompletionSettings TrackedStatAutocompletionSettings = new(input =>
     {
         List<string> ret = new();
         foreach (string key in Enum.GetNames(typeof(TrackedStats)))
@@ -329,13 +369,34 @@ public class ETGModConsole : ETGModMenu
         return ret.ToArray();
     });
 
-    public static AutocompletionSettings TrueFalseAutocompletionSettings = AutocompletionFromCollection(new string[] { "true", "false" });
-    public static AutocompletionSettings ChestAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameChests.Concat(ModdedChests.Keys));
-    public static AutocompletionSettings ShrineAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameShrines.Select(x => x.Replace("shrine_", "")).Concat(ModdedShrines.Keys));
-    public static AutocompletionSettings NPCAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameNPCs.Keys.Concat(ModdedNPCs.Keys));
-    public static AutocompletionSettings LevelAutocompletionSettings = AutocompletionFromCollectionGetter(() => DungeonDictionary.Keys);
-    public static AutocompletionSettings PlayerStatAutocompletionSettings = AutocompletionFromCollectionGetter(() => PlayerStatDictionary.Keys);
-    public static AutocompletionSettings CharacterAutocompletionSettings = AutocompletionFromCollectionGetter(() => Characters.Keys);
+    /// <summary>
+    /// The basic true/false autocompletion settings.
+    /// </summary>
+    public static readonly AutocompletionSettings TrueFalseAutocompletionSettings = AutocompletionFromCollection(new string[] { "true", "false" });
+    /// <summary>
+    /// The basic autocompletion settings for chests, including modded chests.
+    /// </summary>
+    public static readonly AutocompletionSettings ChestAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameChests.Concat(ModdedChests.Keys));
+    /// <summary>
+    /// The basic autocompletion settings for shrines, including modded shrines.
+    /// </summary>
+    public static readonly AutocompletionSettings ShrineAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameShrines.Select(x => x.Replace("shrine_", "")).Concat(ModdedShrines.Keys));
+    /// <summary>
+    /// The basic autocompletion settings for NPCs, including modded NPCs.
+    /// </summary>
+    public static readonly AutocompletionSettings NPCAutocompletionSettings = AutocompletionFromCollectionGetter(() => BaseGameNPCs.Keys.Concat(ModdedNPCs.Keys));
+    /// <summary>
+    /// The basic autocompletion settings for floors.
+    /// </summary>
+    public static readonly AutocompletionSettings LevelAutocompletionSettings = AutocompletionFromCollectionGetter(() => DungeonDictionary.Keys);
+    /// <summary>
+    /// The basic autocompletion settings for player stats.
+    /// </summary>
+    public static readonly AutocompletionSettings PlayerStatAutocompletionSettings = AutocompletionFromCollectionGetter(() => PlayerStatDictionary.Keys);
+    /// <summary>
+    /// The basic autocompletion settings for characters.
+    /// </summary>
+    public static readonly AutocompletionSettings CharacterAutocompletionSettings = AutocompletionFromCollectionGetter(() => Characters.Keys);
 
     public override void Start()
     {
@@ -1085,24 +1146,54 @@ public class ETGModConsole : ETGModMenu
         }
     }
 
+    /// <summary>
+    /// Builds autocompletion settings from a collection.
+    /// </summary>
+    /// <param name="collection">The collection to build the settings from.</param>
+    /// <returns>The built autocompletion settings.</returns>
     public static AutocompletionSettings AutocompletionFromCollection(IEnumerable<string> collection)
     {
         return new AutocompletionSettings(x => collection?.Distinct()?.Where(x2 => (x2?.ToLowerInvariant()?.AutocompletionMatch(x.ToLowerInvariant())).GetValueOrDefault())?.ToArray() ?? new string[0]);
     }
 
+    /// <summary>
+    /// Builds autocompletion settings from a collection of collection, each representing a level of autocompletion.
+    /// </summary>
+    /// <param name="collection">The collection of collections to build the settings from.</param>
+    /// <returns>The built autocompletion settings.</returns>
     public static AutocompletionSettings AutocompletionFromCollection(IEnumerable<IEnumerable<string>> collection)
     {
         return new AutocompletionSettings((count, x) => collection?.ToList()[count]?.Distinct()?.Where(x2 => (x2?.ToLowerInvariant()?.AutocompletionMatch(x.ToLowerInvariant())).GetValueOrDefault())?.ToArray() ?? new string[0]);
     }
 
+    /// <summary>
+    /// Builds autocompletion settings from a Func that gets a collection.
+    /// </summary>
+    /// <param name="collectionGet">The Func that gets the collection for the autocompletion.</param>
+    /// <returns>The built autocompletion settings.</returns>
     public static AutocompletionSettings AutocompletionFromCollectionGetter(Func<IEnumerable<string>> collectionGet)
     {
         return new AutocompletionSettings(x => collectionGet?.Invoke()?.Distinct()?.Where(x2 => (x2?.ToLowerInvariant()?.AutocompletionMatch(x.ToLowerInvariant())).GetValueOrDefault())?.ToArray() ?? new string[0]);
     }
 
+    /// <summary>
+    /// Builds autocompletion settings from a Func that gets a collection from an autocompletion level.
+    /// </summary>
+    /// <param name="collectionGet">The Func that gets the collection for the autocompletion from an autocompletion level.</param>
+    /// <returns>The built autocompletion settings.</returns>
     public static AutocompletionSettings AutocompletionFromCollectionGetterMultilevel(Func<int, IEnumerable<string>> collectionGet)
     {
         return new AutocompletionSettings((x, x2) => collectionGet?.Invoke(x)?.Distinct()?.Where(x3 => (x3?.ToLowerInvariant()?.AutocompletionMatch(x2.ToLowerInvariant())).GetValueOrDefault())?.ToArray() ?? new string[0]);
+    }
+
+    /// <summary>
+    /// Builds autocompletion settings from an IDPool.
+    /// </summary>
+    /// <param name="pool">The IDPool to build the autocompletion from.</param>
+    /// <returns>The built autocompletion settings.</returns>
+    public static AutocompletionSettings AutocompletionFromIDPool<T>(IDPool<T> pool)
+    {
+        return new AutocompletionSettings((level, key) => pool.IDs.Where(x => x.ToLowerInvariant().AutocompletionMatch(key.ToLowerInvariant())).Select(x => x.Replace("gungeon:", "")).ToArray());
     }
 
     public void HideAutocomplete()

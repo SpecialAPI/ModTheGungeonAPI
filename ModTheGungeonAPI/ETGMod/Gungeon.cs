@@ -4,22 +4,39 @@ using System.Reflection;
 using System.Runtime;
 
 namespace Gungeon {
+    /// <summary>
+    /// Contains the IDPools for Items and Enemies.
+    /// </summary>
     public static partial class Game {
-        private static IDPool<PickupObject> _Items = new IDPool<PickupObject>();
-        private static IDPool<AIActor> _Enemies = new IDPool<AIActor>();
+        private static readonly IDPool<PickupObject> _Items = new();
+        private static readonly IDPool<AIActor> _Enemies = new();
         private static bool initialized;
 
+        /// <summary>
+        /// The IDPool for items, containing both modded and basegame items.
+        /// </summary>
         public static IDPool<PickupObject> Items
         {
             get
             {
+                if(_Items == null)
+                {
+                    Initialize();
+                }
                 return _Items;
             }
         }
+        /// <summary>
+        /// The IDPool for enemies, containing both modded and basegame enemies.
+        /// </summary>
         public static IDPool<AIActor> Enemies
         {
             get
             {
+                if (_Enemies == null)
+                {
+                    Initialize();
+                }
                 return _Enemies;
             }
         }
@@ -47,7 +64,7 @@ namespace Gungeon {
             }
         }
 
-        public static void Initialize()
+        internal static void Initialize()
         {
             if (initialized)
             {

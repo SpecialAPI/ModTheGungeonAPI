@@ -7,22 +7,44 @@ public static class GunExt
 
     private static GunAnimationSpriteCache SpriteCache = new GunAnimationSpriteCache();
 
+    /// <summary>
+    /// Sets the given item's name to the given string.
+    /// </summary>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new name for the item.</param>
     public static void SetName(this PickupObject item, string text)
     {
         ETGMod.Databases.Strings.Items.Set(item.encounterTrackable.journalData.PrimaryDisplayName, text);
     }
+
+    /// <summary>
+    /// Sets the given item's short description to the given string.
+    /// </summary>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new short description for the item.</param>
     public static void SetShortDescription(this PickupObject item, string text)
     {
         ETGMod.Databases.Strings.Items.Set(item.encounterTrackable.journalData.NotificationPanelDescription, text);
     }
+
+    /// <summary>
+    /// Sets the given item's long description to the given string.
+    /// </summary>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new long description for the item.</param>
     public static void SetLongDescription(this PickupObject item, string text)
     {
         ETGMod.Databases.Strings.Items.Set(item.encounterTrackable.journalData.AmmonomiconFullEntry, text);
     }
 
+    /// <summary>
+    /// Updates a gun's animation sprites if the animations have been setup, or sets them up otherwise.
+    /// </summary>
+    /// <param name="gun">The gun to process.</param>
+    /// <param name="collection">The collection to get the sprites from. Defaults to WeaponCollection.</param>
     public static void UpdateAnimations(this Gun gun, tk2dSpriteCollectionData collection = null)
     {
-        collection = collection ?? ETGMod.Databases.Items.WeaponCollection;
+        collection ??= ETGMod.Databases.Items.WeaponCollection;
 
         gun.idleAnimation = gun.UpdateAnimation("idle", collection);
         gun.dodgeAnimation = gun.UpdateAnimation("dodge", collection);
@@ -42,9 +64,17 @@ public static class GunExt
         gun.alternateIdleAnimation = gun.UpdateAnimation("alternate_idle", collection);
     }
 
+    /// <summary>
+    /// Updates a specific gun animation's sprites or sets it up if it doesn't exist.
+    /// </summary>
+    /// <param name="gun">The gun to update the animaiton for.</param>
+    /// <param name="name">The name for the animation.</param>
+    /// <param name="collection">The collection to get the sprites from. Defaults to WeaponCollection</param>
+    /// <param name="returnToIdle">True if the animation should return to the idle animation after playing, false otherwise.</param>
+    /// <returns>The full name for the created or updated animation.</returns>
     public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false)
     {
-        collection = collection ?? ETGMod.Databases.Items.WeaponCollection;
+        collection ??= ETGMod.Databases.Items.WeaponCollection;
         SpriteCache.UpdateCollection(collection);
         var frames = SpriteCache.TryGetAnimationFrames(collection.name, gun.name, name);
 
@@ -71,6 +101,11 @@ public static class GunExt
         return clipName;
     }
 
+    /// <summary>
+    /// Sets the fps of all animations for the given gun to the given number.
+    /// </summary>
+    /// <param name="gun">The gun to process.</param>
+    /// <param name="fps">The new fps for all of the animations.</param>
     public static void SetAnimationFPS(this Gun gun, int fps)
     {
         gun.SetAnimationFPS(gun.idleAnimation, fps);
@@ -88,9 +123,15 @@ public static class GunExt
         gun.SetAnimationFPS(gun.alternateShootAnimation, fps);
         gun.SetAnimationFPS(gun.alternateReloadAnimation, fps);
     }
+    /// <summary>
+    /// Sets the fps of an animation with a given name for a given gun to the given number/
+    /// </summary>
+    /// <param name="gun">The gun to process.</param>
+    /// <param name="name">The name of the animation to change.</param>
+    /// <param name="fps">The new fps for the given animation.</param>
     public static void SetAnimationFPS(this Gun gun, string name, int fps)
     {
-        if (string.IsNullOrEmpty(name))
+        if (string.IsNullOrEmpty(name) || gun == null || gun.spriteAnimator == null || gun.spriteAnimator.Library == null)
         {
             return;
         }
@@ -103,79 +144,90 @@ public static class GunExt
         clip.fps = fps;
     }
 
-    public static Projectile ClonedPrefab(this Projectile orig)
+    /// <summary>
+    /// Adds a projectile from a gun with the given internal name to the given gun's list of possible projectiles.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile to.</param>
+    /// <param name="other">The internal name of the gun to get the projectile from.</param>
+    /// <returns>The added projectile.</returns>
+    public static Projectile AddProjectileFrom(this Gun gun, string other)
     {
-        if (orig == null) return null;
-
-        orig.gameObject.SetActive(false);
-        Projectile clone = UnityEngine.Object.Instantiate(orig.gameObject).GetComponent<Projectile>();
-        orig.gameObject.SetActive(true);
-
-        clone.name = orig.name;
-        UnityEngine.Object.DontDestroyOnLoad(clone.gameObject);
-
-        return clone;
-    }
-    public static Projectile EnabledClonedPrefab(this Projectile projectile)
-    {
-        if (projectile == null) return null;
-
-        if (!projectile.gameObject.activeSelf)
-        {
-            string name = projectile.name;
-            // TODO The clone of the clone fixes the projectile "breaking", but may cause performance issues.
-            projectile = (Projectile)UnityEngine.Object.Instantiate(projectile, projectile.transform.parent);
-            projectile.name = name;
-            projectile.gameObject.SetActive(true);
-        }
-
-        return projectile;
+        return gun.AddProjectileFrom((Gun)ETGMod.Databases.Items[other]);
     }
 
-    public static Projectile AddProjectileFrom(this Gun gun, string other, bool cloned = true)
-    {
-        return gun.AddProjectileFrom((Gun)ETGMod.Databases.Items[other], cloned);
-    }
-    public static Projectile AddProjectileFrom(this Gun gun, Gun other, bool cloned = true)
+    /// <summary>
+    /// Adds a projectile to the given gun's list of possible projectiles from another given gun.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile to.</param>
+    /// <param name="other">The gun to get the projectile from.</param>
+    /// <returns>The added projectile.</returns>
+    public static Projectile AddProjectileFrom(this Gun gun, Gun other)
     {
         if (other.DefaultModule.projectiles.Count == 0) return null;
         Projectile p = other.DefaultModule.projectiles[0];
         if (p == null) return null;
-        return gun.AddProjectile(!cloned ? p : p.ClonedPrefab());
+        return gun.AddProjectile(p);
     }
+
+    /// <summary>
+    /// Adds the given projectile to the given gun's list of possible projectiles.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile to.</param>
+    /// <param name="projectile">The projectile to add.</param>
+    /// <returns>The added projectile.</returns>
     public static Projectile AddProjectile(this Gun gun, Projectile projectile)
     {
         gun.DefaultModule.projectiles.Add(projectile);
         return projectile;
     }
 
-    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, string other, bool cloned = true, bool clonedProjectiles = true)
+    /// <summary>
+    /// Adds a projectile module from a gun with the given internal name to the given gun's list of projectile modules.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile module to.</param>
+    /// <param name="other">The internal name of the gun to get the projectile module from.</param>
+    /// <returns>The added projectile module.</returns>
+    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, string other)
     {
-        return gun.AddProjectileModuleFrom((Gun)ETGMod.Databases.Items[other], cloned, clonedProjectiles);
+        return gun.AddProjectileModuleFrom((Gun)ETGMod.Databases.Items[other]);
     }
-    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, Gun other, bool cloned = true, bool clonedProjectiles = true)
+
+    /// <summary>
+    /// Adds a projectile module to the given gun's list of projectile modules from another given gun.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile module to.</param>
+    /// <param name="other">The gun to get the projectile module from.</param>
+    /// <returns>The added projectile module.</returns>
+    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, Gun other)
     {
         ProjectileModule module = other.DefaultModule;
-        if (!cloned) return gun.AddProjectileModule(module);
-
         ProjectileModule clone = ProjectileModule.CreateClone(module, false);
-        clone.projectiles = new List<Projectile>(module.projectiles.Capacity);
-        for (int i = 0; i < module.projectiles.Count; i++)
-        {
-            clone.projectiles.Add(!clonedProjectiles ? module.projectiles[i] : module.projectiles[i].ClonedPrefab());
-        }
+        clone.chargeProjectiles = new(module.chargeProjectiles);
+        clone.projectiles = new(module.projectiles);
         return gun.AddProjectileModule(clone);
     }
+
+    /// <summary>
+    /// Adds the given projectile module to the given gun's list of projectile modules.
+    /// </summary>
+    /// <param name="gun">The gun to add the projectile module to.</param>
+    /// <param name="projectile">The projectile module to add.</param>
+    /// <returns>The added projectile module.</returns>
     public static ProjectileModule AddProjectileModule(this Gun gun, ProjectileModule projectile)
     {
         gun.Volley.projectiles.Add(projectile);
         return projectile;
     }
 
+    /// <summary>
+    /// Sets the gun's default sprite to the gun's ammonomicon sprite, and if defaultSprite isn't null, sets the ammonomicon sprite to defaultSprite. If fps isn't 0, also sets the fps for all of the gun's animaiton to the given number.
+    /// </summary>
+    /// <param name="gun">The gun to do the setup for.</param>
+    /// <param name="collection">The collection to get the default sprite from. Defaults to WeaponCollection.</param>
+    /// <param name="defaultSprite">The name of the sprite to set the gun's ammonomicon sprite to. Defaults to null, which makes it not set the sprite to anything.</param>
+    /// <param name="fps">The new fps for all of the gun's animations. Defaults to 0, which doesn't change the fps.</param>
     public static void SetupSprite(this Gun gun, tk2dSpriteCollectionData collection = null, string defaultSprite = null, int fps = 0)
     {
-        //AmmonomiconController.ForceInstance.EncounterIconCollection.Handle();
-        //ETGMod.Databases.Items.ProjectileCollection.Handle();
         collection ??= ETGMod.Databases.Items.WeaponCollection;
 
         if (defaultSprite != null)

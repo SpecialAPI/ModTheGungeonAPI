@@ -22,6 +22,7 @@ namespace SGUI {
 
         /// <summary>
         /// Modeled after the parabola y = -x^2 + 2x
+        /// </summary>
         public static float QuadraticEaseOut(float f) { return -(f * (f - 2f)); }
 
         /// <summary>

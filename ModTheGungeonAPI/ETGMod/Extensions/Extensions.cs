@@ -12,10 +12,14 @@ using System.Globalization;
 public static partial class ETGMod
 {
     // ETGMod helper extension methods.
-
-    public static string ToStringIfNoString(this object o)
+    /// <summary>
+    /// Just like object.ToString(), but returns string.Empty if the object is null.
+    /// </summary>
+    /// <param name="o">The object to convert into string.</param>
+    /// <returns>The result string.</returns>
+    public static string ToStringSafe(this object o)
     {
-        return o == null ? null : o is string ? (string)o : o.ToString();
+        return o == null ? string.Empty : o is string str ? str : o.ToString();
     }
 
     private static readonly long _DoubleNegativeZero = BitConverter.DoubleToInt64Bits(-0D);

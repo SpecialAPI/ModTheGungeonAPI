@@ -77,8 +77,6 @@ public class ETGModGUI : MonoBehaviour {
         LoggerMenu = new ETGModDebugLogMenu();
         ConsoleMenu = new ETGModConsole();
         LoaderMenu = new ETGModLoaderMenu();
-
-        ETGDamageIndicatorGUI.Create();
     }
 
     public static void Start() {

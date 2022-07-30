@@ -10,6 +10,11 @@ using BepInEx;
 
 public static partial class ETGMod
 {
+    /// <summary>
+    /// Returns the path to a plugin's folder.
+    /// </summary>
+    /// <param name="plug">The plugin to get the folder path of.</param>
+    /// <returns>The path to a plugin's folder.</returns>
     public static string FolderPath(this BaseUnityPlugin plug)
     {
         return Path.Combine(plug.Info.Location, "..");
@@ -21,19 +26,32 @@ public static partial class ETGMod
     public static partial class Assets
     {
         private static List<tk2dSpriteCollectionData> _spriteCollections;
+        private static readonly List<string> processedFolders = new();
 
+        /// <summary>
+        /// All loaded sprite collections.
+        /// </summary>
         public static List<tk2dSpriteCollectionData> Collections => _spriteCollections ??= Resources.FindObjectsOfTypeAll<tk2dSpriteCollectionData>().Where(x => x?.gameObject != null && x.gameObject.scene.name == null).ToList();
 
-        private readonly static Vector2[] _DefaultUVs = {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(1f, 1f)
-        };
-        public static Shader DefaultSpriteShader;
+        /// <summary>
+        /// A dictionary where the keys are the paths to textures loaded through SetupSprites methods and the values are the textures themselves.
+        /// </summary>
         public static Dictionary<string, Texture2D> TextureMap = new();
+
+        /// <summary>
+        /// The instance RuntimeAtlasPacker that is used for creating new spritesheets.
+        /// </summary>
         public static RuntimeAtlasPacker Packer = new();
 
+        /// <summary>
+        /// Creates UVs for a sprite definition.
+        /// </summary>
+        /// <param name="texture">The spritesheet texture.</param>
+        /// <param name="x">The x coordinate of your target texture's bottom left corner.</param>
+        /// <param name="y">The y coordinate of your target texture's bottom left corner.</param>
+        /// <param name="width">The width of your target texture.</param>
+        /// <param name="height">The height of your target texture.</param>
+        /// <returns>The created UVs.</returns>
         public static Vector2[] GenerateUVs(Texture2D texture, int x, int y, int width, int height)
         {
             return new Vector2[] {
@@ -44,8 +62,16 @@ public static partial class ETGMod
             };
         }
 
+        /// <summary>
+        /// Sets up sprites from a folder, adding sprites to collections or replacing existing sprites.
+        /// </summary>
+        /// <param name="folder">The root folder for the sprite setup.</param>
         public static void SetupSpritesFromFolder(string folder)
         {
+            if (processedFolders.Contains(folder))
+            {
+                return;
+            }
             if (!Directory.Exists(folder))
             {
                 ETGModConsole.Log($"Part of the path to {folder} is missing!");
@@ -203,8 +229,14 @@ public static partial class ETGMod
                     }
                 }
             }
+            processedFolders.Add(folder);
         }
 
+        /// <summary>
+        /// Sets up sprites from an assembly's embedded resources, adding sprites to collections or replacing existing sprites.
+        /// </summary>
+        /// <param name="asmb">The assembly to search.</param>
+        /// <param name="path">The root path to the folder in the assembly's embedded resources.</param>
         public static void SetupSpritesFromAssembly(Assembly asmb, string path)
         {
             if(asmb == null)
@@ -382,29 +414,31 @@ public static partial class ETGMod
             }
         }
 
-        public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true)
+        /// <summary>
+        /// Replaces a sprite definition's texture with the given one.
+        /// </summary>
+        /// <param name="frame">The sprite definition to replace.</param>
+        /// <param name="replacement">The replacement texture.</param>
+        public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement)
         {
             frame.flipped = tk2dSpriteDefinition.FlipMode.None;
             frame.materialInst = new Material(frame.material);
             frame.texelSize = replacement.texelSize;
-            frame.extractRegion = pack;
-            if (pack)
-            {
-                RuntimeAtlasSegment segment = Packer.Pack(replacement);
-                frame.materialInst.mainTexture = segment.texture;
-                frame.uvs = segment.uvs;
-            }
-            else
-            {
-                frame.materialInst.mainTexture = replacement;
-                frame.uvs = _DefaultUVs;
-            }
+            frame.extractRegion = true;
+            RuntimeAtlasSegment segment = Packer.Pack(replacement);
+            frame.materialInst.mainTexture = segment.texture;
+            frame.uvs = segment.uvs;
         }
 
     }
 
-    public static void ReplaceTexture(this tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true)
+    /// <summary>
+    /// Replaces a sprite definition's texture with the given one.
+    /// </summary>
+    /// <param name="frame">The sprite definition to replace.</param>
+    /// <param name="replacement">The replacement texture.</param>
+    public static void ReplaceTexture(this tk2dSpriteDefinition frame, Texture2D replacement)
     {
-        Assets.ReplaceTexture(frame, replacement, pack);
+        Assets.ReplaceTexture(frame, replacement);
     }
 }
