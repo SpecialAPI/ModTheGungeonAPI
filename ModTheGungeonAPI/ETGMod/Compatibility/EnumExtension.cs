@@ -50,6 +50,8 @@ public static partial class ETGModCompatibility
 		{
 			valuesForEnum = extendedEnums[t];
 		}
+		name = name.RemoveUnacceptableCharactersForEnum().Replace(".", "");
+		guid = guid.RemoveUnacceptableCharactersForEnum();
 		GuidInfo ginfo = new(guid, name);
 		var values = valuesForEnum.Where(x => x.Key.guid == ginfo.guid && x.Key.info == ginfo.info);
 		KeyValuePair<GuidInfo, int>? value = null;

@@ -94,7 +94,7 @@ public class ItemDB
             }
             ModItemMap[value.name] = value;
             value.PickupObjectId = id;
-
+            value.encounterTrackable.EncounterGuid = value.encounterTrackable.EncounterGuid.RemoveUnacceptableCharactersForGUID();
             EncounterDatabaseEntry edbEntry = new(value.encounterTrackable);
             edbEntry.ProxyEncounterGuid =
             edbEntry.myGuid = value.encounterTrackable.EncounterGuid;
@@ -218,7 +218,7 @@ public class ItemDB
         gun.SetBaseMaxAmmo(300);
         gun.reloadTime = 0.625f;
 
-        Gungeon.Game.Items.Add($"outdated_gun_mods:{gunName.ToLowerInvariant().Replace(' ', '_')}", gun);
+        Gungeon.Game.Items.Add($"outdated_gun_mods:{gunName.ToID()}", gun);
 
         return gun;
     }

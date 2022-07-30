@@ -22,6 +22,44 @@ public static partial class ETGMod
         return o == null ? string.Empty : o is string str ? str : o.ToString();
     }
 
+    /// <summary>
+    /// Removes the characters ", \, -, and \n from the string.
+    /// </summary>
+    /// <param name="str">The string to modify.</param>
+    /// <returns>The string with then unacceptable characters removed.</returns>
+    public static string RemoveUnacceptableCharactersForEnum(this string str)
+    {
+        if(str == null)
+        {
+            return null;
+        }
+        return str.Replace("\"", "").Replace("\\", "").Replace(" ", "").Replace("-", "_").Replace("\n", "");
+    }
+
+    /// <summary>
+    /// Removes the characters ", \, and \n from the string.
+    /// </summary>
+    /// <param name="str">The string to modify.</param>
+    /// <returns>The string with then unacceptable characters removed.</returns>
+    public static string RemoveUnacceptableCharactersForGUID(this string str)
+    {
+        if (str == null)
+        {
+            return null;
+        }
+        return str.Replace("\"", "").Replace("\\", "").Replace("\n", "");
+    }
+
+    /// <summary>
+    /// Makes the string all lowercase, removes the characters \n, \, \", . and - and replaces spaces with underscores.
+    /// </summary>
+    /// <param name="str"></param>
+    /// <returns></returns>
+    public static string ToID(this string str)
+    {
+        return str.ToLowerInvariant().Replace("\n", "").Replace("\\", "").Replace("\"", "").Replace(" ", "_").Replace(".", "").Replace("-", "");
+    }
+
     private static readonly long _DoubleNegativeZero = BitConverter.DoubleToInt64Bits(-0D);
     public static bool IsNegativeZero(this double d)
     {
