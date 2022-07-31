@@ -118,6 +118,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BeamBehaviourTracker.cs" />
     <Compile Include="ETGMod\Assets\Assets.cs" />
     <Compile Include="ETGMod\Assets\Data.cs" />
     <Compile Include="ETGMod\Assets\RuntimeAtlas.cs" />

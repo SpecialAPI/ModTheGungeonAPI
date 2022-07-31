@@ -8,7 +8,9 @@ using MonoMod.RuntimeDetour;
 using System.Reflection;
 using HarmonyLib;
 using Dungeonator;
+using MonoMod.Cil;
 
+[HarmonyPatch]
 /// <summary>
 /// Base class for gun modifier behaviours.
 /// </summary>
@@ -308,6 +310,120 @@ public class GunBehaviour : BraveBehaviour
 	/// <param name="dataIndex">Not used.</param>
 	public virtual void MidGameSerialize(List<object> data, int dataIndex)
 	{
+	}
+
+	/// <summary>
+	/// Runs when the gun this behaviour is applied to is thrown.
+	/// </summary>
+	/// <param name="gun">The gun that was thrown.</param>
+	/// <param name="owner">The owner of the gun that was thrown.</param>
+	/// <param name="thrownGunProjectile">The projectile that the gun is attached to.</param>
+	public virtual void OnGunThrown(Gun gun, GameActor owner, Projectile thrownGunProjectile)
+    {
+    }
+
+	/// <summary>
+	/// Runs when the gun this behaviour is applied to is thrown by a player.
+	/// </summary>
+	/// <param name="gun">The gun that was thrown.</param>
+	/// <param name="owner">The owner of the gun that was thrown.</param>
+	/// <param name="thrownGunProjectile">The projectile that the gun is attached to.</param>
+	public virtual void OnGunThrownPlayer(Gun gun, PlayerController owner, Projectile thrownGunProjectile)
+	{
+	}
+
+	/// <summary>
+	/// Runs when the gun this behaviour is applied to is thrown by an enemy.
+	/// </summary>
+	/// <param name="gun">The gun that was thrown.</param>
+	/// <param name="owner">The owner of the gun that was thrown.</param>
+	/// <param name="thrownGunProjectile">The projectile that the gun is attached to.</param>
+	public virtual void OnGunThrownEnemy(Gun gun, AIActor owner, Projectile thrownGunProjectile)
+	{
+	}
+
+	/// <summary>
+	/// Runs when the gun this behaviour is applied to starts firing a beam.
+	/// </summary>
+	/// <param name="beam">The beam that the gun this behaviour is applied to started firing.</param>
+	public virtual void PostProcessBeam(BeamController beam)
+    {
+    }
+
+	/// <summary>
+	/// Runs every second when a beam fired by the gun this behaviour is applied to is active.
+	/// </summary>
+	/// <param name="beam">The beam fired by the gun this behaviour is applied to.</param>
+	public virtual void PostProcessBeamChanceTick(BeamController beam)
+	{
+	}
+
+	[HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
+	[HarmonyPostfix]
+	private static void ProcessThrownGun(Gun __instance)
+    {
+		var proj = __instance.GetComponentInParent<Projectile>();
+		var advanced = __instance.GetComponent<GunBehaviour>();
+		if (proj != null && advanced != null)
+        {
+			var own = proj.Owner;
+			if(own == null)
+            {
+				return;
+            }
+			advanced.OnGunThrown(__instance, own, proj);
+			if(own is PlayerController player)
+			{
+				advanced.OnGunThrownPlayer(__instance, player, proj);
+			}
+			else if(own is AIActor enemy)
+			{
+				advanced.OnGunThrownEnemy(__instance, enemy, proj);
+			}
+        }
+    }
+
+	[HarmonyPatch(typeof(Gun), nameof(Gun.BeginFiringBeam))]
+	[HarmonyPostfix]
+	private static void AddBeamTracker(Gun __instance)
+	{
+		var advanced = __instance.GetComponent<GunBehaviour>();
+		if (advanced != null && __instance.LastProjectile != null && __instance.LastProjectile.GetComponent<BeamController>() != null)
+        {
+			__instance.LastProjectile.gameObject.GetOrAddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
+        }
+    }
+
+	[HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.Start))]
+	[HarmonyPostfix]
+	private static void PostProcessBeam(BasicBeamController __instance)
+    {
+		var tracker = __instance.GetComponent<BeamBehaviourTracker>();
+		if(tracker != null && tracker.gunBehaviour != null)
+        {
+			tracker.gunBehaviour.PostProcessBeam(__instance);
+        }
+    }
+
+	[HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
+	[HarmonyPrefix]
+	private static void PostProcessBeamChanceTick(BasicBeamController __instance, ref float __state)
+	{
+		__state = __instance.m_chanceTick;
+	}
+
+	[HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
+	[HarmonyPostfix]
+	private static void PostProcessBeamChanceTick2(BasicBeamController __instance, float __state)
+	{
+		if(__state <= 0f)
+		{
+			var tracker = __instance.GetComponent<BeamBehaviourTracker>();
+			if (tracker != null && tracker.gunBehaviour != null)
+			{
+				tracker.gunBehaviour.PostProcessBeamChanceTick(__instance);
+			}
+		}
 	}
 
 	/// <summary>
