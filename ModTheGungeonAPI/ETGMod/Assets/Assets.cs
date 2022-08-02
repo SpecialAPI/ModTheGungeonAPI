@@ -419,7 +419,8 @@ public static partial class ETGMod
         /// </summary>
         /// <param name="frame">The sprite definition to replace.</param>
         /// <param name="replacement">The replacement texture.</param>
-        public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement)
+        /// <param name="pack">Does nothing, only exists for backwards compatibility.</param>
+        public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true)
         {
             frame.flipped = tk2dSpriteDefinition.FlipMode.None;
             frame.materialInst = new Material(frame.material);
@@ -437,7 +438,8 @@ public static partial class ETGMod
     /// </summary>
     /// <param name="frame">The sprite definition to replace.</param>
     /// <param name="replacement">The replacement texture.</param>
-    public static void ReplaceTexture(this tk2dSpriteDefinition frame, Texture2D replacement)
+    /// <param name="pack">Does nothing, only exists for backwards compatibility.</param>
+    public static void ReplaceTexture(this tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true)
     {
         Assets.ReplaceTexture(frame, replacement);
     }

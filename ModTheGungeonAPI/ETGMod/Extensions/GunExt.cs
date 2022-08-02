@@ -149,8 +149,9 @@ public static class GunExt
     /// </summary>
     /// <param name="gun">The gun to add the projectile to.</param>
     /// <param name="other">The internal name of the gun to get the projectile from.</param>
+    /// <param name="cloned">Does nothing, only exists for backwards compatibility.</param>
     /// <returns>The added projectile.</returns>
-    public static Projectile AddProjectileFrom(this Gun gun, string other)
+    public static Projectile AddProjectileFrom(this Gun gun, string other, bool cloned = true)
     {
         return gun.AddProjectileFrom((Gun)ETGMod.Databases.Items[other]);
     }
@@ -160,8 +161,9 @@ public static class GunExt
     /// </summary>
     /// <param name="gun">The gun to add the projectile to.</param>
     /// <param name="other">The gun to get the projectile from.</param>
+    /// <param name="cloned">Does nothing, only exists for backwards compatibility.</param>
     /// <returns>The added projectile.</returns>
-    public static Projectile AddProjectileFrom(this Gun gun, Gun other)
+    public static Projectile AddProjectileFrom(this Gun gun, Gun other, bool cloned = true)
     {
         if (other.DefaultModule.projectiles.Count == 0) return null;
         Projectile p = other.DefaultModule.projectiles[0];
@@ -187,8 +189,9 @@ public static class GunExt
     /// <param name="gun">The gun to add the projectile module to.</param>
     /// <param name="other">The internal name of the gun to get the projectile module from.</param>
     /// <param name="cloned">Does nothing, only exists for backwards compatibility.</param>
+    /// <param name="clonedProjectiles">Does nothing, only exists for backwards compatibility.</param>
     /// <returns>The added projectile module.</returns>
-    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, string other, bool cloned = false)
+    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, string other, bool cloned = false, bool clonedProjectiles = true)
     {
         return gun.AddProjectileModuleFrom((Gun)ETGMod.Databases.Items[other]);
     }
@@ -199,8 +202,9 @@ public static class GunExt
     /// <param name="gun">The gun to add the projectile module to.</param>
     /// <param name="other">The gun to get the projectile module from.</param>
     /// <param name="cloned">Does nothing, only exists for backwards compatibility.</param>
+    /// <param name="clonedProjectiles">Does nothing, only exists for backwards compatibility.</param>
     /// <returns>The added projectile module.</returns>
-    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, Gun other, bool cloned = false)
+    public static ProjectileModule AddProjectileModuleFrom(this Gun gun, Gun other, bool cloned = false, bool clonedProjectiles = true)
     {
         ProjectileModule module = other.DefaultModule;
         ProjectileModule clone = ProjectileModule.CreateClone(module, false);

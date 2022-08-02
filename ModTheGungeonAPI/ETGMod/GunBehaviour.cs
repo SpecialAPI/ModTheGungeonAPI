@@ -10,10 +10,10 @@ using HarmonyLib;
 using Dungeonator;
 using MonoMod.Cil;
 
-[HarmonyPatch]
 /// <summary>
 /// Base class for gun modifier behaviours.
 /// </summary>
+[HarmonyPatch]
 public class GunBehaviour : BraveBehaviour
 {
 	private void Awake()

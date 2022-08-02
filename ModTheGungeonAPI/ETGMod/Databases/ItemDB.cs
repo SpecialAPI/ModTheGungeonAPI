@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using HarmonyLib;
 using Dungeonator;
 
+[HarmonyPatch]
 public class ItemDB
 {
     /// <summary>
@@ -155,16 +156,35 @@ public class ItemDB
     [HarmonyPrefix]
     private static void DungeonStart()
     {
-        if (ETGMod.Databases.Items.ModLootPerFloor.TryGetValue("ANY", out var loot))
+        if(ETGMod.Databases.Items?.ModLootPerFloor != null && GameManager.HasInstance && GameManager.Instance.Dungeon != null && GameManager.Instance.Dungeon.baseChestContents != null &&
+            GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops != null && GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops.elements != null)
         {
-            GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops.elements.AddRange(loot);
-        }
-
-        string floorNameKey = GameManager.Instance.Dungeon.DungeonFloorName;
-        string floorName = floorNameKey.Substring(1, floorNameKey.IndexOf('_') - 1);
-        if (ETGMod.Databases.Items.ModLootPerFloor.TryGetValue(floorName, out loot))
-        {
-            GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops.elements.AddRange(loot);
+            if (ETGMod.Databases.Items.ModLootPerFloor.TryGetValue("ANY", out var loot))
+            {
+                GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops.elements.AddRange(loot);
+            }
+            string floorNameKey = GameManager.Instance.Dungeon.DungeonFloorName;
+            if (!string.IsNullOrEmpty(floorNameKey))
+            {
+                string floorName = null;
+                var startIndex = 0;
+                if (floorNameKey.StartsWith("#"))
+                {
+                    startIndex = 1;
+                }
+                if (floorNameKey.Contains("_") && floorNameKey.IndexOf('_') - startIndex > 0)
+                {
+                    floorName = floorNameKey.Substring(startIndex, floorNameKey.IndexOf('_') - startIndex);
+                }
+                else if (floorNameKey.Length - startIndex > 0)
+                {
+                    floorName = floorNameKey.Substring(startIndex);
+                }
+                if (!string.IsNullOrEmpty(floorName) && ETGMod.Databases.Items.ModLootPerFloor.TryGetValue(floorName, out loot))
+                {
+                    GameManager.Instance.Dungeon.baseChestContents.defaultItemDrops.elements.AddRange(loot);
+                }
+            }
         }
     }
 
