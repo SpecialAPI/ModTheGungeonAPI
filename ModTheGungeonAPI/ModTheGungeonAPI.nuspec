@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>EtG.ModTheGungeonAPI</id>
+    <version>1.5.3</version>
+    <title>EtG.ModTheGungeonAPI</title>
+    <authors>ModTheGungeonAPI</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <iconUrl>https://gcdn.thunderstore.io/live/repository/icons/MtG_API-Mod_the_Gungeon_API-1.5.3.png.256x256_q95_crop.png</iconUrl>
+    <projectUrl>https://github.com/SpecialAPI/ModTheGungeonAPI</projectUrl>
+    <description>An API for Enter the Gungeon that brings the good parts of MtG (Mod the Gungeon) to BepInEx as a plugin.</description>
+    <releaseNotes></releaseNotes>
+    <copyright>MIT</copyright>
+    <tags></tags>
+  </metadata>
+</package>

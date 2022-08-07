@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("ModTheGungeonAPI")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("EtG.ModTheGungeonAPI")]
+[assembly: AssemblyDescription("An API for Enter the Gungeon that brings the good parts of MtG (Mod the Gungeon) to BepInEx as a plugin.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("ModTheGungeonAPI")]
 [assembly: AssemblyProduct("ModTheGungeonAPI")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
