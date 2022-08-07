@@ -16,12 +16,15 @@ using UnityEngine;
 [BepInPlugin(GUID, NAME, VERSION)]
 public class ETGModMainBehaviour : BaseUnityPlugin
 {
+    /// <summary>
+    /// MTG API's guid. Can be set as your mod's dependency if your mod depends on the MTG API.
+    /// </summary>
     public const string GUID = "etgmodding.etg.mtgapi";
     public const string NAME = "Mod the Gungeon API";
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.5.1";
+    public const string VERSION = "1.5.3";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>

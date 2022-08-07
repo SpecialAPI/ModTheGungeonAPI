@@ -10,6 +10,7 @@ using Gungeon;
 using System.Globalization;
 using System.Linq;
 using Dungeonator;
+using BepInEx.Logging;
 
 public static class PlayerControllerExt
 {
@@ -27,7 +28,6 @@ public static class PlayerControllerExt
 }
 public class ETGModConsole : ETGModMenu
 {
-    public const int REVISION = 3;
     List<string> lastCommands = new List<string>();
     private string lastVal = string.Empty;
     private int currentCommandIndex = -1;
@@ -231,10 +231,18 @@ public class ETGModConsole : ETGModMenu
         { "cosmonaut", "cosmonaut" }
     };
 
+    /// <summary>
+    /// The current instance of the console.
+    /// </summary>
     public static ETGModConsole Instance { get; protected set; }
+    /// <summary>
+    /// The current instance of the console's BepInEx console logger. Can be used to write to BepInEx's console under the console's name.
+    /// </summary>
+    public static ManualLogSource Logger;
     public ETGModConsole()
     {
         Instance = this;
+        Logger = BepInEx.Logging.Logger.CreateLogSource("ETG Console");
     }
 
     /// <summary>
@@ -962,30 +970,28 @@ public class ETGModConsole : ETGModMenu
 
     }
 
-    protected virtual SLabel _Log(object text)
+    protected virtual SLabel _Log(object text, Texture image)
     {
-        var slab = new SLabel(text.ToString());
+        var slab = new SLabel(text.ToString())
+        {
+            Icon = image
+        };
         GUI[0].Children.Add(slab);
         ((SGroup)GUI[0]).ScrollPosition.y = float.MaxValue;
+        Logger.LogMessage(text);
         return slab;
     }
 
     protected virtual SButton _LogButton(object text, Action<SButton> onClick, Texture texture)
     {
-        var butt = new SButton(text.ToString());
-        butt.Icon = texture;
-        butt.OnClick = onClick;
+        var butt = new SButton(text.ToString())
+        {
+            Icon = texture,
+            OnClick = onClick
+        };
         GUI[0].Children.Add(butt);
         ((SGroup)GUI[0]).ScrollPosition.y = float.MaxValue;
         return butt;
-    }
-
-    protected virtual SImage _LogImage(Texture tex, Color? color = null)
-    {
-        var im = new SImage(tex, color ?? Color.white);
-        GUI[0].Children.Add(im);
-        ((SGroup)GUI[0]).ScrollPosition.y = float.MaxValue;
-        return im;
     }
 
     public static SLabel Log(object text, bool debuglog = false)
@@ -995,7 +1001,22 @@ public class ETGModConsole : ETGModMenu
             ETGModGUI.Create();
             ETGModGUI.Start();
         }
-        var result = Instance?._Log(text);
+        var result = Instance?._Log(text, null);
+        if (debuglog)
+        {
+            Debug.Log(text);
+        }
+        return result;
+    }
+
+    public static SLabel Log(object text, Texture texture, bool debuglog = false)
+    {
+        if (Instance == null)
+        {
+            ETGModGUI.Create();
+            ETGModGUI.Start();
+        }
+        var result = Instance?._Log(text, texture);
         if (debuglog)
         {
             Debug.Log(text);
@@ -1011,17 +1032,6 @@ public class ETGModConsole : ETGModMenu
             ETGModGUI.Start();
         }
         var result = Instance?._LogButton(text, onClick, texture);
-        return result;
-    }
-
-    public static SImage LogImage(Texture tex, Color? color = null)
-    {
-        if (Instance == null)
-        {
-            ETGModGUI.Create();
-            ETGModGUI.Start();
-        }
-        var result = Instance?._LogImage(tex, color);
         return result;
     }
 

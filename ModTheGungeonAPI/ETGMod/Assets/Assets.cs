@@ -27,11 +27,14 @@ public static partial class ETGMod
     {
         private static List<tk2dSpriteCollectionData> _spriteCollections;
         private static readonly List<string> processedFolders = new();
+        internal static readonly Dictionary<string, Texture2D> unprocessedSingleTextureReplacements = new();
+        internal static readonly Dictionary<string, Dictionary<string, Texture2D>> unprocessedReplacements = new();
+        internal static readonly Dictionary<string, Dictionary<string, AssetSpriteData>> unprocessedJsons = new();
 
         /// <summary>
         /// All loaded sprite collections.
         /// </summary>
-        public static List<tk2dSpriteCollectionData> Collections => _spriteCollections ??= Resources.FindObjectsOfTypeAll<tk2dSpriteCollectionData>().Where(x => x?.gameObject != null && x.gameObject.scene.name == null).ToList();
+        public static List<tk2dSpriteCollectionData> Collections => _spriteCollections ??= Resources.FindObjectsOfTypeAll<tk2dSpriteCollectionData>().Where(x => x?.gameObject != null).ToList();//x.gameObject.scene.name == null
 
         /// <summary>
         /// A dictionary where the keys are the paths to textures loaded through SetupSprites methods and the values are the textures themselves.
@@ -84,24 +87,105 @@ public static partial class ETGMod
                 {
                     trimmed = trimmed.Substring(0, trimmed.LastIndexOf("."));
                 }
-                var coll = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.ToLowerInvariant() == trimmed.ToLowerInvariant());
-                if (coll?.spriteDefinitions != null)
+                Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
+                try
                 {
-                    Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
-                    try
+                    tex.LoadImage(File.ReadAllBytes(image));
+                }
+                catch { }
+                tex.filterMode = FilterMode.Point;
+                var coll = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.ToLowerInvariant() == trimmed.ToLowerInvariant());
+                if (coll == null || coll.materials == null || coll.materials.Length == 0)
+                {
+                    if (coll == null)
                     {
-                        tex.LoadImage(File.ReadAllBytes(image));
-                    }
-                    catch { }
-                    foreach (var def in coll.spriteDefinitions)
-                    {
-                        if(def?.material != null && def.material.mainTexture != tex)
+                        var cname = trimmed.Replace("_", " ");
+                        if (!unprocessedSingleTextureReplacements.ContainsKey(cname) || unprocessedSingleTextureReplacements[cname] == null)
                         {
-                            if (def.materialInst != null && def.materialInst.mainTexture == def.material.mainTexture)
+                            unprocessedSingleTextureReplacements[cname] = tex;
+                        }
+                    }
+                    continue;
+                }
+
+                var material = coll.materials[0];
+                if (!material)
+                    continue;
+
+                Texture mainTexture = material.mainTexture;
+                if (!mainTexture)
+                    continue;
+
+                string atlasName = mainTexture.name;
+                if (string.IsNullOrEmpty(atlasName))
+                    continue;
+
+                if (atlasName[0] == '~')
+                    continue;
+                Dictionary<int, Texture> textureCache = new();
+                if (coll.spriteDefinitions != null)
+                {
+                    for (int i = 0; i < coll.spriteDefinitions.Length; i++)
+                    {
+                        var def = coll.spriteDefinitions[i];
+                        var addToCache = def.materialInst != null;
+                        foreach (var mat in coll.materials)
+                        {
+                            if (def.materialInst == null || def.materialInst.mainTexture == mat.mainTexture)
                             {
-                                def.materialInst.mainTexture = tex;
+                                addToCache = false;
                             }
-                            def.material.mainTexture = tex;
+                        }
+                        if (addToCache)
+                        {
+                            textureCache[i] = def.materialInst.mainTexture;
+                        }
+                    }
+                }
+                tex.name = '~' + atlasName;
+                for (int i = 0; i < coll.materials.Length; i++)
+                {
+                    if (coll.materials[i]?.mainTexture == null)
+                        continue;
+
+                    coll.materials[i].mainTexture = tex;
+                }
+                coll.inst.materialInsts = null;
+                coll.inst.Init();
+                var instIsNew = coll.inst != coll;
+                foreach (var kvp in textureCache)
+                {
+                    if (kvp.Key < coll.Count)
+                    {
+                        var def = coll.spriteDefinitions[kvp.Key];
+                        if (def != null && def.materialInst != null)
+                        {
+                            def.materialInst = new(def.material);
+                            def.materialInst.mainTexture = kvp.Value;
+                        }
+                    }
+                }
+                if (instIsNew)
+                {
+                    if (coll.inst?.materials != null)
+                    {
+                        for (int i = 0; i < coll.inst.materials.Length; i++)
+                        {
+                            if (coll.inst.materials[i]?.mainTexture == null)
+                                continue;
+
+                            coll.inst.materials[i].mainTexture = tex;
+                        }
+                    }
+                    foreach (var kvp in textureCache)
+                    {
+                        if (kvp.Key < coll.inst.Count)
+                        {
+                            var def = coll.inst.spriteDefinitions[kvp.Key];
+                            if (def != null && def.materialInst != null)
+                            {
+                                def.materialInst.mainTexture = kvp.Value;
+                            }
                         }
                     }
                 }
@@ -228,6 +312,44 @@ public static partial class ETGMod
                         coll.inst.spriteNameLookupDict = null;
                     }
                 }
+                else if(coll == null)
+                {
+                    if(!unprocessedReplacements.TryGetValue(trimmed.Replace("_", " "), out var replacement))
+                    {
+                        replacement = new();
+                        unprocessedReplacements.Add(trimmed.Replace("_", " "), replacement);
+                    }
+                    if (!unprocessedJsons.TryGetValue(trimmed.Replace("_", " "), out var json))
+                    {
+                        json = new();
+                        unprocessedJsons.Add(trimmed.Replace("_", " "), json);
+                    }
+                    foreach (var image in Directory.GetFiles(collection, "*.png"))
+                    {
+                        var trimmedExtension = image.Substring(0, image.LastIndexOf("."));
+                        var defName = trimmedExtension.Substring(trimmedExtension.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+                        Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
+                        try
+                        {
+                            tex.LoadImage(File.ReadAllBytes(image));
+                        }
+                        catch { }
+                        replacement[defName] = tex;
+                    }
+                    foreach (var j in Directory.GetFiles(collection, "*.json"))
+                    {
+                        var trimmedExtension = j.Substring(0, j.LastIndexOf("."));
+                        var defName = trimmedExtension.Substring(trimmedExtension.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+                        using var stream = File.OpenRead(j);
+                        AssetSpriteData frameData = default;
+                        try
+                        {
+                            frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                        }
+                        catch { ETGModConsole.Log("Error: invalid json at path " + j); continue; }
+                        json[defName] = frameData;
+                    }
+                }
             }
             processedFolders.Add(folder);
         }
@@ -252,6 +374,9 @@ public static partial class ETGMod
             tk2dSpriteCollectionData coll = null;
             List<tk2dSpriteDefinition> newSprites = null;
             List<tk2dSpriteDefinition> newSpriteInst = null;
+            List<string> singleTextureReplacements = new();
+            List<string> replacements = new();
+            List<string> jsons = new();
             var resources = asmb.GetManifestResourceNames();
             foreach (var resource in resources)
             {
@@ -260,145 +385,323 @@ public static partial class ETGMod
                     var names = resource.Substring(path.LastIndexOf(".") + 1).Split('.');
                     if (names.Length == 3)
                     {
-                        var collection = names[0];
-                        var name = names[1];
                         var extension = names[2];
                         if (extension.ToLowerInvariant() == "png")
                         {
-                            if (collection != cachedCollectionName) // only get a new collection if the name changes
-                            {
-                                if (coll != null && newSprites != null)
-                                {
-                                    coll.spriteDefinitions = newSprites.ToArray();
-                                    newSprites = null;
-                                    if (coll.inst != coll && newSpriteInst != null)
-                                    {
-                                        coll.inst.spriteDefinitions = newSpriteInst.ToArray();
-                                        newSpriteInst = null;
-                                        coll.inst.spriteNameLookupDict = null;
-                                    }
-                                    coll.spriteNameLookupDict = null;
-                                }
-                                coll = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.Replace(" ", "_").ToLowerInvariant() == collection.ToLowerInvariant());
-                                if (coll?.spriteDefinitions != null)
-                                {
-                                    newSprites = new(coll.spriteDefinitions);
-                                    newSpriteInst = new(coll.inst.spriteDefinitions);
-                                }
-                                cachedCollectionName = collection;
-                            }
-                            if (coll?.spriteDefinitions != null && coll.Count > 0) //no point in going though the sprites if they mean nothing
-                            {
-                                var instIsNew = coll.inst != coll;
-                                Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
-                                using (var s = asmb.GetManifestResourceStream(resource))
-                                {
-                                    try
-                                    {
-                                        var b = new byte[s.Length];
-                                        s.Read(b, 0, b.Length);
-                                        tex.LoadImage(b);
-                                    }
-                                    catch { }
-                                }
-                                var id = -1;
-                                var existingIdx = coll.GetSpriteIdByName(name, -1);
-                                if (existingIdx >= 0)
-                                {
-                                    coll.spriteDefinitions[existingIdx].ReplaceTexture(tex);
-                                    if (instIsNew)
-                                    {
-                                        coll.inst.spriteDefinitions[existingIdx].ReplaceTexture(tex);
-                                    }
-                                    id = existingIdx;
-                                }
-                                else
-                                {
-                                    var frame = new tk2dSpriteDefinition
-                                    {
-                                        name = name,
-                                        material = coll.materials[0]
-                                    }; // if youre reading this, FROG
-                                    frame.ReplaceTexture(tex);
-
-                                    frame.normals = new Vector3[0];
-                                    frame.tangents = new Vector4[0];
-                                    frame.indices = new int[] { 0, 3, 1, 2, 3, 0 };
-                                    const float pixelScale = 0.0625f;
-                                    float w = tex.width * pixelScale;
-                                    float h = tex.height * pixelScale;
-                                    frame.position0 = new Vector3(0f, 0f, 0f);
-                                    frame.position1 = new Vector3(w, 0f, 0f);
-                                    frame.position2 = new Vector3(0f, h, 0f);
-                                    frame.position3 = new Vector3(w, h, 0f);
-                                    frame.boundsDataCenter = frame.untrimmedBoundsDataCenter = new Vector3(w / 2f, h / 2f, 0f);
-                                    frame.boundsDataExtents = frame.untrimmedBoundsDataExtents = new Vector3(w, h, 0f);
-                                    id = newSprites.Count;
-                                    newSprites.Add(frame);
-                                    newSpriteInst.Add(frame);
-                                }
-                                var mapName = $"sprite/{collection}/{name}";
-                                if (TextureMap.ContainsKey(mapName))
-                                {
-                                    TextureMap[mapName] = tex;
-                                }
-                                else
-                                {
-                                    TextureMap.Add(mapName, tex);
-                                }
-                                var jsonpath = $"{path}{collection}.{name}.json";
-                                if (resources.Contains(jsonpath))
-                                {
-                                    using var stream = asmb.GetManifestResourceStream(jsonpath);
-                                    AssetSpriteData frameData = default;
-                                    try
-                                    {
-                                        frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
-                                    }
-                                    catch { ETGModConsole.Log("Error: invalid json at path " + jsonpath); continue; }
-                                    coll.SetAttachPoints(id, frameData.attachPoints);
-                                    if (instIsNew)
-                                    {
-                                        coll.inst.SetAttachPoints(id, frameData.attachPoints);
-                                    }
-                                }
-                            }
+                            replacements.Add(resource);
+                        }
+                        else if(extension.ToLowerInvariant() == "json")
+                        {
+                            jsons.Add(resource);
                         }
                     }
                     else if(names.Length == 2)
                     {
-                        var collection = names[0];
                         var extension = names[1];
                         if(extension.ToLowerInvariant() == "png")
                         {
-                            var spriteCollection = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.ToLowerInvariant() == collection.ToLowerInvariant());
-                            if (spriteCollection?.spriteDefinitions != null)
+                            singleTextureReplacements.Add(resource);
+                        }
+                    }
+                }
+            }
+            foreach(var resource in singleTextureReplacements)
+            {
+                Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
+                using (var s = asmb.GetManifestResourceStream(resource))
+                {
+                    try
+                    {
+                        var b = new byte[s.Length];
+                        s.Read(b, 0, b.Length);
+                        tex.LoadImage(b);
+                    }
+                    catch { }
+                }
+                tex.filterMode = FilterMode.Point;
+                var names = resource.Substring(path.LastIndexOf(".") + 1).Split('.');
+                var collection = names[0];
+                var spriteCollection = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.Replace(" ", "_").ToLowerInvariant() == collection.ToLowerInvariant());
+                if (spriteCollection == null || spriteCollection.materials == null || spriteCollection.materials.Length == 0)
+                {
+                    if (spriteCollection == null)
+                    {
+                        var cname = collection.Replace("_", " ");
+                        if (!unprocessedSingleTextureReplacements.ContainsKey(cname) || unprocessedSingleTextureReplacements[cname] == null)
+                        {
+                            unprocessedSingleTextureReplacements[cname] = tex;
+                        }
+                    }
+                    continue;
+                }
+
+                var material = spriteCollection.materials[0];
+                if (!material)
+                    continue;
+
+                Texture mainTexture = material.mainTexture;
+                if (!mainTexture)
+                    continue;
+
+                string atlasName = mainTexture.name;
+                if (string.IsNullOrEmpty(atlasName))
+                    continue;
+
+                if (atlasName[0] == '~')
+                    continue;
+                Dictionary<int, Texture> textureCache = new();
+                if(spriteCollection.spriteDefinitions != null)
+                {
+                    for (int i = 0; i < spriteCollection.spriteDefinitions.Length; i++)
+                    {
+                        var def = spriteCollection.spriteDefinitions[i];
+                        var addToCache = def.materialInst != null;
+                        foreach(var mat in spriteCollection.materials)
+                        {
+                            if (def.materialInst == null || def.materialInst.mainTexture == mat.mainTexture)
                             {
-                                Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
-                                using (var s = asmb.GetManifestResourceStream(resource))
-                                {
-                                    try
-                                    {
-                                        var b = new byte[s.Length];
-                                        s.Read(b, 0, b.Length);
-                                        tex.LoadImage(b);
-                                    }
-                                    catch { }
-                                }
-                                foreach (var def in spriteCollection.spriteDefinitions)
-                                {
-                                    if (def?.material != null && def.material.mainTexture != tex)
-                                    {
-                                        if (def.materialInst != null && def.materialInst.mainTexture == def.material.mainTexture)
-                                        {
-                                            def.materialInst.mainTexture = tex;
-                                        }
-                                        def.material.mainTexture = tex;
-                                    }
-                                }
+                                addToCache = false;
+                            }
+                        }
+                        if (addToCache)
+                        {
+                            textureCache[i] = def.materialInst.mainTexture;
+                        }
+                    }
+                }
+                tex.name = '~' + atlasName;
+                for (int i = 0; i < spriteCollection.materials.Length; i++)
+                {
+                    if (spriteCollection.materials[i]?.mainTexture == null)
+                        continue;
+
+                    spriteCollection.materials[i].mainTexture = tex;
+                }
+                spriteCollection.inst.materialInsts = null;
+                spriteCollection.inst.Init();
+                var instIsNew = spriteCollection.inst != spriteCollection;
+                foreach(var kvp in textureCache)
+                {
+                    if(kvp.Key < spriteCollection.Count)
+                    {
+                        var def = spriteCollection.spriteDefinitions[kvp.Key];
+                        if(def != null && def.materialInst != null)
+                        {
+                            def.materialInst.mainTexture = kvp.Value;
+                        }
+                    }
+                }
+                if (instIsNew)
+                {
+                    if (spriteCollection.inst?.materials != null)
+                    {
+                        for (int i = 0; i < spriteCollection.inst.materials.Length; i++)
+                        {
+                            if (spriteCollection.inst.materials[i]?.mainTexture == null)
+                                continue;
+
+                            spriteCollection.inst.materials[i].mainTexture = tex;
+                        }
+                    }
+                    foreach (var kvp in textureCache)
+                    {
+                        if (kvp.Key < spriteCollection.inst.Count)
+                        {
+                            var def = spriteCollection.inst.spriteDefinitions[kvp.Key];
+                            if (def != null && def.materialInst != null)
+                            {
+                                def.materialInst.mainTexture = kvp.Value;
                             }
                         }
                     }
+                }
+            }
+            foreach (var resource in jsons)
+            {
+                var names = resource.Substring(path.LastIndexOf(".") + 1).Split('.');
+                var collection = names[0];
+                var name = names[1];
+                if (collection != cachedCollectionName) // only get a new collection if the name changes
+                {
+                    if (coll != null && newSprites != null)
+                    {
+                        coll.spriteDefinitions = newSprites.ToArray();
+                        newSprites = null;
+                        if (coll.inst != coll && newSpriteInst != null)
+                        {
+                            coll.inst.spriteDefinitions = newSpriteInst.ToArray();
+                            newSpriteInst = null;
+                            coll.inst.spriteNameLookupDict = null;
+                        }
+                        coll.spriteNameLookupDict = null;
+                    }
+                    coll = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.Replace(" ", "_").ToLowerInvariant() == collection.ToLowerInvariant());
+                    if (coll?.spriteDefinitions != null)
+                    {
+                        newSprites = new(coll.spriteDefinitions);
+                        newSpriteInst = new(coll.inst.spriteDefinitions);
+                    }
+                    cachedCollectionName = collection;
+                }
+                if (coll?.spriteDefinitions != null && coll.Count > 0) //no point in going though the sprites if they mean nothing
+                {
+                    var id = coll.GetSpriteIdByName(name, -1);
+                    if (id < 0)
+                    {
+                        continue;
+                    }
+                    using var stream = asmb.GetManifestResourceStream(resource);
+                    AssetSpriteData frameData = default;
+                    try
+                    {
+                        frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                    }
+                    catch { ETGModConsole.Log("Error: invalid json at project path " + resource); continue; }
+                    coll.SetAttachPoints(id, frameData.attachPoints);
+                    if (coll.inst != coll)
+                    {
+                        coll.inst.SetAttachPoints(id, frameData.attachPoints);
+                    }
+                }
+                else if(coll == null)
+                {
+                    using var stream = asmb.GetManifestResourceStream(resource);
+                    AssetSpriteData frameData = default;
+                    try
+                    {
+                        frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                    }
+                    catch { ETGModConsole.Log("Error: invalid json at project path " + resource); continue; }
+                    if (!unprocessedJsons.TryGetValue(collection.Replace("_", " "), out var json))
+                    {
+                        json = new();
+                        unprocessedJsons.Add(collection.Replace("_", " "), json);
+                    }
+                    json.Add(name, frameData);
+                }
+            }
+            foreach (var resource in replacements)
+            {
+                var names = resource.Substring(path.LastIndexOf(".") + 1).Split('.');
+                var collection = names[0];
+                var name = names[1];
+                if (collection != cachedCollectionName) // only get a new collection if the name changes
+                {
+                    if (coll != null && newSprites != null)
+                    {
+                        coll.spriteDefinitions = newSprites.ToArray();
+                        newSprites = null;
+                        if (coll.inst != coll && newSpriteInst != null)
+                        {
+                            coll.inst.spriteDefinitions = newSpriteInst.ToArray();
+                            newSpriteInst = null;
+                            coll.inst.spriteNameLookupDict = null;
+                        }
+                        coll.spriteNameLookupDict = null;
+                    }
+                    coll = Collections.Find(x => x?.spriteCollectionName != null && x.spriteCollectionName.Replace(" ", "_").ToLowerInvariant() == collection.ToLowerInvariant());
+                    if (coll?.spriteDefinitions != null)
+                    {
+                        newSprites = new(coll.spriteDefinitions);
+                        newSpriteInst = new(coll.inst.spriteDefinitions);
+                    }
+                    cachedCollectionName = collection;
+                }
+                if (coll?.spriteDefinitions != null && coll.Count > 0) //no point in going though the sprites if they mean nothing
+                {
+                    var instIsNew = coll.inst != coll;
+                    Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
+                    using (var s = asmb.GetManifestResourceStream(resource))
+                    {
+                        try
+                        {
+                            var b = new byte[s.Length];
+                            s.Read(b, 0, b.Length);
+                            tex.LoadImage(b);
+                        }
+                        catch { }
+                    }
+                    var id = -1;
+                    var existingIdx = coll.GetSpriteIdByName(name, -1);
+                    if (existingIdx >= 0)
+                    {
+                        coll.spriteDefinitions[existingIdx].ReplaceTexture(tex);
+                        if (instIsNew)
+                        {
+                            coll.inst.spriteDefinitions[existingIdx].ReplaceTexture(tex);
+                        }
+                        id = existingIdx;
+                    }
+                    else
+                    {
+                        var frame = new tk2dSpriteDefinition
+                        {
+                            name = name,
+                            material = coll.materials[0]
+                        }; // if youre reading this, FROG
+                        frame.ReplaceTexture(tex);
+
+                        frame.normals = new Vector3[0];
+                        frame.tangents = new Vector4[0];
+                        frame.indices = new int[] { 0, 3, 1, 2, 3, 0 };
+                        const float pixelScale = 0.0625f;
+                        float w = tex.width * pixelScale;
+                        float h = tex.height * pixelScale;
+                        frame.position0 = new Vector3(0f, 0f, 0f);
+                        frame.position1 = new Vector3(w, 0f, 0f);
+                        frame.position2 = new Vector3(0f, h, 0f);
+                        frame.position3 = new Vector3(w, h, 0f);
+                        frame.boundsDataCenter = frame.untrimmedBoundsDataCenter = new Vector3(w / 2f, h / 2f, 0f);
+                        frame.boundsDataExtents = frame.untrimmedBoundsDataExtents = new Vector3(w, h, 0f);
+                        id = newSprites.Count;
+                        newSprites.Add(frame);
+                        newSpriteInst.Add(frame);
+                    }
+                    var mapName = $"sprite/{collection}/{name}";
+                    if (TextureMap.ContainsKey(mapName))
+                    {
+                        TextureMap[mapName] = tex;
+                    }
+                    else
+                    {
+                        TextureMap.Add(mapName, tex);
+                    }
+                    var jsonpath = $"{path}{collection}.{name}.json";
+                    if (resources.Contains(jsonpath))
+                    {
+                        using var stream = asmb.GetManifestResourceStream(jsonpath);
+                        AssetSpriteData frameData = default;
+                        try
+                        {
+                            frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                        }
+                        catch { ETGModConsole.Log("Error: invalid json at project path " + jsonpath); continue; }
+                        coll.SetAttachPoints(id, frameData.attachPoints);
+                        if (instIsNew)
+                        {
+                            coll.inst.SetAttachPoints(id, frameData.attachPoints);
+                        }
+                    }
+                }
+                else
+                {
+                    Texture2D tex = new(1, 1, TextureFormat.RGBA32, false);
+                    using (var s = asmb.GetManifestResourceStream(resource))
+                    {
+                        try
+                        {
+                            var b = new byte[s.Length];
+                            s.Read(b, 0, b.Length);
+                            tex.LoadImage(b);
+                        }
+                        catch { }
+                    }
+                    if (!unprocessedReplacements.TryGetValue(collection.Replace("_", " "), out var replacement))
+                    {
+                        replacement = new();
+                        unprocessedReplacements.Add(collection.Replace("_", " "), replacement);
+                    }
+                    replacement.Add(name, tex);
                 }
             }
             if (coll != null && newSprites != null)
