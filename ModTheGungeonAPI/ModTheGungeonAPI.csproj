@@ -138,10 +138,10 @@
       <HintPath>..\packages\HarmonyX.2.7.0\lib\net35\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\EtG.GameLibs.2.1.9-r.0\lib\net35\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\packages\EtG.GameLibs.2.1.9.1\lib\net35\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\EtG.GameLibs.2.1.9-r.0\lib\net35\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>..\packages\EtG.GameLibs.2.1.9.1\lib\net35\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx, Version=5.4.21.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\BepInEx.BaseLib.5.4.21\lib\net35\BepInEx.dll</HintPath>
@@ -168,7 +168,7 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net35\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PlayMaker, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\EtG.GameLibs.2.1.9-r.0\lib\net35\PlayMaker.dll</HintPath>
+      <HintPath>..\packages\EtG.GameLibs.2.1.9.1\lib\net35\PlayMaker.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
