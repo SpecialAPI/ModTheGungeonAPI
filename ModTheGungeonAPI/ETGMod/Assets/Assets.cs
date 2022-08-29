@@ -25,7 +25,13 @@ public static partial class ETGMod
     /// </summary>
     public static partial class Assets
     {
+        /// <summary>
+        /// The extension for tk2dSpriteDefinition metadata files, without the . at the start.
+        /// </summary>
         public const string DEFINITION_METADATA_EXTENSION = "jtk2d";
+        /// <summary>
+        /// The extension for tk2dSpriteDefinition metadata files, with the . at the start.
+        /// </summary>
         public const string FULL_DEFINITION_METADATA_EXTENSION = ".jtk2d";
         private static List<tk2dSpriteCollectionData> _spriteCollections;
         private static readonly List<string> processedFolders = new();
