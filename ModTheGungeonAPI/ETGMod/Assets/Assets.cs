@@ -25,6 +25,8 @@ public static partial class ETGMod
     /// </summary>
     public static partial class Assets
     {
+        public const string DEFINITION_METADATA_EXTENSION = "jtk2d";
+        public const string FULL_DEFINITION_METADATA_EXTENSION = ".jtk2d";
         private static List<tk2dSpriteCollectionData> _spriteCollections;
         private static readonly List<string> processedFolders = new();
         internal static readonly Dictionary<string, Texture2D> unprocessedSingleTextureReplacements = new();
@@ -211,7 +213,8 @@ public static partial class ETGMod
                     List<tk2dSpriteDefinition> newSprites = new(coll.spriteDefinitions);
                     List<tk2dSpriteDefinition> newSpriteInst = new(coll.inst.spriteDefinitions);
                     var instIsNew = coll.inst != coll;
-                    foreach(var j in Directory.GetFiles(collection, "*.json"))
+                    var allMetadata = Directory.GetFiles(collection, "*.json").Concat(Directory.GetFiles(collection, FULL_DEFINITION_METADATA_EXTENSION));
+                    foreach (var j in allMetadata)
                     {
                         var trimmedExtension = j.Substring(0, j.LastIndexOf("."));
                         var defName = trimmedExtension.Substring(trimmedExtension.LastIndexOf(Path.DirectorySeparatorChar) + 1);
@@ -276,7 +279,22 @@ public static partial class ETGMod
                             frame.boundsDataCenter = frame.untrimmedBoundsDataCenter = new Vector3(w / 2f, h / 2f, 0f);
                             frame.boundsDataExtents = frame.untrimmedBoundsDataExtents = new Vector3(w, h, 0f);
                             id = newSprites.Count;
-                            if (File.Exists(trimmedExtension + ".json"))
+                            if (File.Exists(trimmedExtension + FULL_DEFINITION_METADATA_EXTENSION))
+                            {
+                                using var stream = File.OpenRead(trimmedExtension + FULL_DEFINITION_METADATA_EXTENSION);
+                                AssetSpriteData frameData = default;
+                                try
+                                {
+                                    frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                                }
+                                catch { ETGModConsole.Log("Error: invalid json at path " + trimmedExtension + FULL_DEFINITION_METADATA_EXTENSION); continue; }
+                                coll.SetAttachPoints(id, frameData.attachPoints);
+                                if (instIsNew)
+                                {
+                                    coll.inst.SetAttachPoints(id, frameData.attachPoints);
+                                }
+                            }
+                            else if (File.Exists(trimmedExtension + ".json"))
                             {
                                 using var stream = File.OpenRead(trimmedExtension + ".json");
                                 AssetSpriteData frameData = default;
@@ -336,7 +354,8 @@ public static partial class ETGMod
                         catch { }
                         replacement[defName] = tex;
                     }
-                    foreach (var j in Directory.GetFiles(collection, "*.json"))
+                    var allMetadata = Directory.GetFiles(collection, "*.json").Concat(Directory.GetFiles(collection, FULL_DEFINITION_METADATA_EXTENSION));
+                    foreach (var j in allMetadata)
                     {
                         var trimmedExtension = j.Substring(0, j.LastIndexOf("."));
                         var defName = trimmedExtension.Substring(trimmedExtension.LastIndexOf(Path.DirectorySeparatorChar) + 1);
@@ -390,7 +409,7 @@ public static partial class ETGMod
                         {
                             replacements.Add(resource);
                         }
-                        else if(extension.ToLowerInvariant() == "json")
+                        else if(extension.ToLowerInvariant() == "json" || extension.ToLowerInvariant() == DEFINITION_METADATA_EXTENSION)
                         {
                             jsons.Add(resource);
                         }
@@ -666,8 +685,24 @@ public static partial class ETGMod
                     {
                         TextureMap.Add(mapName, tex);
                     }
+                    var jtk2dpath = $"{path}{collection}.{name}.json";
                     var jsonpath = $"{path}{collection}.{name}.json";
-                    if (resources.Contains(jsonpath))
+                    if (resources.Contains(jtk2dpath))
+                    {
+                        using var stream = asmb.GetManifestResourceStream(jtk2dpath);
+                        AssetSpriteData frameData = default;
+                        try
+                        {
+                            frameData = JSONHelper.ReadJSON<AssetSpriteData>(stream);
+                        }
+                        catch { ETGModConsole.Log("Error: invalid json at project path " + jtk2dpath); continue; }
+                        coll.SetAttachPoints(id, frameData.attachPoints);
+                        if (instIsNew)
+                        {
+                            coll.inst.SetAttachPoints(id, frameData.attachPoints);
+                        }
+                    }
+                    else if (resources.Contains(jsonpath))
                     {
                         using var stream = asmb.GetManifestResourceStream(jsonpath);
                         AssetSpriteData frameData = default;
