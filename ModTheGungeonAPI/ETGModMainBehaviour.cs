@@ -24,7 +24,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.5.6";
+    public const string VERSION = "1.5.7";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>

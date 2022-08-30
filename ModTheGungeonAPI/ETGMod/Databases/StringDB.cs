@@ -51,6 +51,7 @@ public class StringDB
     public Action<StringTableManager.GungeonSupportedLanguages> OnLanguageChanged;
 
     [HarmonyPatch(typeof(StringTableManager), nameof(StringTableManager.SetNewLanguage))]
+    [HarmonyPostfix]
     private static void LanguageChanged()
     {
         ETGMod.Databases.Strings.Core.LanguageChanged();
