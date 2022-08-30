@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using HarmonyLib;
 
+[HarmonyPatch]
 public class StringDB
 {
     /// <summary>
