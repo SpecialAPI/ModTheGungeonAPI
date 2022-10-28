@@ -37,10 +37,6 @@ public class StringDB
     /// </summary>
     public readonly StringDBTable Intro = new(() => StringTableManager.IntroTable);
     /// <summary>
-    /// The string table that has ui text. Unused in the base game.
-    /// </summary>
-    public readonly StringDBTable UI = new(() => UITable);
-    /// <summary>
     /// The string table that has all of the synergy names.
     /// </summary>
     public readonly StringDBTable Synergy = new(() => SynergyTable);
@@ -59,22 +55,6 @@ public class StringDB
         ETGMod.Databases.Strings.Enemies.LanguageChanged();
         ETGMod.Databases.Strings.Intro.LanguageChanged();
         ETGMod.Databases.Strings.OnLanguageChanged?.Invoke(ETGMod.Databases.Strings.CurrentLanguage);
-    }
-
-    public static Dictionary<string, StringTableManager.StringCollection> UITable
-    {
-        get
-        {
-            if (StringTableManager.m_uiTable == null)
-            {
-                StringTableManager.m_uiTable = StringTableManager.LoadUITable(StringTableManager.m_currentSubDirectory);
-            }
-            if (StringTableManager.m_backupUiTable == null)
-            {
-                StringTableManager.m_backupUiTable = StringTableManager.LoadUITable("english_items");
-            }
-            return StringTableManager.m_uiTable;
-        }
     }
 
     public static Dictionary<string, StringTableManager.StringCollection> SynergyTable

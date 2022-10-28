@@ -318,7 +318,7 @@ public static partial class ETGMod
                             newSprites.Add(frame);
                             newSpriteInst.Add(frame);
                         }
-                        var mapName = $"sprite/{trimmed}/{defName}";
+                        var mapName = $"sprite/{coll.spriteCollectionName}/{defName}";
                         if (TextureMap.ContainsKey(mapName))
                         {
                             TextureMap[mapName] = tex;
@@ -682,7 +682,7 @@ public static partial class ETGMod
                         newSprites.Add(frame);
                         newSpriteInst.Add(frame);
                     }
-                    var mapName = $"sprite/{collection}/{name}";
+                    var mapName = $"sprite/{coll.spriteCollectionName}/{name}";
                     if (TextureMap.ContainsKey(mapName))
                     {
                         TextureMap[mapName] = tex;
