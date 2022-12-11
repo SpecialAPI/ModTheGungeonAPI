@@ -146,7 +146,6 @@ public class ItemDB
     /// <param name="collection">Does nothing, only exists for backwards compatibility.</param>
     /// <param name="floor">The floor to the fallback loot table of which the gun will be added.</param>
     /// <returns>The id of the added gun.</returns>
-    [Obsolete("Add(Gun, tk2dSpriteCollection, string) is deprecated, use Add(PickupObject, bool, string)")]
     public int Add(Gun value, tk2dSpriteCollectionData collection = null, string floor = "ANY")
     {
         return Add(value, false, floor);

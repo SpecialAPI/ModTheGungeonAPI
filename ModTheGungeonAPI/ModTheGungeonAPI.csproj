@@ -42,6 +42,7 @@
     <Compile Include="ETGMod\Assets\Data.cs" />
     <Compile Include="ETGMod\Assets\RuntimeAtlas.cs" />
     <Compile Include="ETGMod\Compatibility\EnumExtension.cs" />
+    <Compile Include="ETGMod\Compatibility\ExtendedEnumCache.cs" />
     <Compile Include="ETGMod\Compatibility\GuidInfo.cs" />
     <Compile Include="ETGMod\Compatibility\SharedData.cs" />
     <Compile Include="ETGMod\Databases\ItemDB.cs" />

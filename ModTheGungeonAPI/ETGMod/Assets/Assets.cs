@@ -318,15 +318,7 @@ public static partial class ETGMod
                             newSprites.Add(frame);
                             newSpriteInst.Add(frame);
                         }
-                        var mapName = $"sprite/{coll.spriteCollectionName}/{defName}";
-                        if (TextureMap.ContainsKey(mapName))
-                        {
-                            TextureMap[mapName] = tex;
-                        }
-                        else
-                        {
-                            TextureMap.Add(mapName, tex);
-                        }
+                        TextureMap[$"sprites/{coll.spriteCollectionName}/{defName}"] = tex;
                     }
                     coll.spriteDefinitions = newSprites.ToArray();
                     coll.spriteNameLookupDict = null;
@@ -682,15 +674,7 @@ public static partial class ETGMod
                         newSprites.Add(frame);
                         newSpriteInst.Add(frame);
                     }
-                    var mapName = $"sprite/{coll.spriteCollectionName}/{name}";
-                    if (TextureMap.ContainsKey(mapName))
-                    {
-                        TextureMap[mapName] = tex;
-                    }
-                    else
-                    {
-                        TextureMap.Add(mapName, tex);
-                    }
+                    TextureMap[$"sprites/{coll.spriteCollectionName}/{name}"] = tex;
                     var jtk2dpath = $"{path}{collection}.{name}.json";
                     var jsonpath = $"{path}{collection}.{name}.json";
                     if (resources.Contains(jtk2dpath))

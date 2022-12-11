@@ -40,11 +40,20 @@ public class StringDB
     /// The string table that has all of the synergy names.
     /// </summary>
     public readonly StringDBTable Synergy = new(() => SynergyTable);
+    /// <summary>
+    /// The string table that has all of the UI text.
+    /// </summary>
+    public readonly UIStringDBTable UI = new();
 
     /// <summary>
-    /// 
+    /// Runs when the game's language is changed.
     /// </summary>
     public Action<StringTableManager.GungeonSupportedLanguages> OnLanguageChanged;
+
+    /// <summary>
+    /// Runs for each UI language manager when the game's language is changed or when a UI language manager is created.
+    /// </summary>
+    public Action<dfLanguageManager, dfLanguageCode> OnUILanguageChanged;
 
     [HarmonyPatch(typeof(StringTableManager), nameof(StringTableManager.SetNewLanguage))]
     [HarmonyPostfix]
@@ -57,6 +66,27 @@ public class StringDB
         ETGMod.Databases.Strings.OnLanguageChanged?.Invoke(ETGMod.Databases.Strings.CurrentLanguage);
     }
 
+    [HarmonyPatch(typeof(dfLanguageManager), nameof(dfLanguageManager.LoadLanguage))]
+    [HarmonyPostfix]
+    private static void UILanguageChanged(dfLanguageManager __instance, dfLanguageCode language, bool forceReload)
+    {
+        ETGMod.Databases.Strings.UI.LanguageChanged(__instance);
+        ETGMod.Databases.Strings.OnUILanguageChanged?.Invoke(__instance, language);
+        if (forceReload)
+        {
+            dfControl[] controls = __instance.GetComponentsInChildren<dfControl>();
+            for (int i = 0; i < controls.Length; i++)
+            {
+                controls[i].Localize();
+            }
+            for (int j = 0; j < controls.Length; j++)
+            {
+                controls[j].PerformLayout();
+                controls[j].LanguageChanged?.Invoke(controls[j]);
+            }
+        }
+    }
+
     public static Dictionary<string, StringTableManager.StringCollection> SynergyTable
     {
         get
@@ -67,7 +97,7 @@ public class StringDB
             }
             if (StringTableManager.m_backupSynergyTable == null)
             {
-                StringTableManager.m_backupSynergyTable = StringTableManager.LoadItemsTable("english_items");
+                StringTableManager.m_backupSynergyTable = StringTableManager.LoadSynergyTable("english_items");
             }
             return StringTableManager.m_synergyTable;
         }
@@ -90,7 +120,7 @@ public sealed class StringDBTable
     public StringDBTable(Func<Dictionary<string, StringTableManager.StringCollection>> getTable)
     {
         _getTable = getTable;
-        _changes = new Dictionary<string, StringTableManager.StringCollection>();
+        _changes = new();
     }
 
     /// <summary>
@@ -134,6 +164,30 @@ public sealed class StringDBTable
     }
 
     /// <summary>
+    /// Sets a string with the given key to the given values that all have the weight 1.
+    /// </summary>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="values">The new values for the string that all have the weight 1.</param>
+    public void SetComplex(string key, params string[] values)
+    {
+        var collection = new StringTableManager.ComplexStringCollection();
+        values.Do(x => collection.AddString(x, 1f));
+        this[key] = collection;
+    }
+
+    /// <summary>
+    /// Sets a string with the given key to the given values.
+    /// </summary>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="values">The new values and weights for the string where the strings are values and floats are weights.</param>
+    public void SetComplex(string key, params Tuple<string, float>[] values)
+    {
+        var collection = new StringTableManager.ComplexStringCollection();
+        values.Do(x => collection.AddString(x.First, x.Second));
+        this[key] = collection;
+    }
+
+    /// <summary>
     /// Reloads the table and reapplies all of the changes made.
     /// </summary>
     public void LanguageChanged()
@@ -145,5 +199,46 @@ public sealed class StringDBTable
         {
             table[kvp.Key] = kvp.Value;
         }
+    }
+}
+
+public sealed class UIStringDBTable
+{
+    private readonly Dictionary<string, string> _changes = new();
+
+    /// <summary>
+    /// Reapplies all of the changes made to the given manager.
+    /// </summary>
+    /// <param name="man">The manager to reapply the changes to.</param>
+    public void LanguageChanged(dfLanguageManager man)
+    {
+        foreach(var kvp in _changes)
+        {
+            man.strings[kvp.Key] = kvp.Value;
+        }
+    }
+
+    /// <summary>
+    /// Sets a string with the given key to the given value.
+    /// </summary>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="value">The new value for the string.</param>
+    public void Set(string key, string value)
+    {
+        if(dfGUIManager.activeInstances != null)
+        {
+            foreach (var man in dfGUIManager.ActiveManagers)
+            {
+                if (man != null)
+                {
+                    var lang = man.GetComponent<dfLanguageManager>();
+                    if (lang != null)
+                    {
+                        lang.strings[key] = value;
+                    }
+                }
+            }
+        }
+        _changes[key] = value;
     }
 }

@@ -316,15 +316,7 @@ internal class HarmonyPatches
                             newSprites.Add(frame);
                             newSpriteInst.Add(frame);
                         }
-                        var mapName = $"sprite/{coll.spriteCollectionName}/{defName}";
-                        if (ETGMod.Assets.TextureMap.ContainsKey(mapName))
-                        {
-                            ETGMod.Assets.TextureMap[mapName] = tex;
-                        }
-                        else
-                        {
-                            ETGMod.Assets.TextureMap.Add(mapName, tex);
-                        }
+                        ETGMod.Assets.TextureMap[$"sprites/{coll.spriteCollectionName}/{defName}"] = tex;
                     }
                     coll.spriteDefinitions = newSprites.ToArray();
                     coll.spriteNameLookupDict = null;
