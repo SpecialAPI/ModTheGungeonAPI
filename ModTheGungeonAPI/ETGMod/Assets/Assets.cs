@@ -17,7 +17,15 @@ public static partial class ETGMod
     /// <returns>The path to a plugin's folder.</returns>
     public static string FolderPath(this BaseUnityPlugin plug)
     {
-        return Path.Combine(plug.Info.Location, "..");
+        if(plug == null || plug.Info == null || plug.Info.Location == null)
+        {
+            return "";
+        }
+        if (plug.Info.Location.LastIndexOf(Path.DirectorySeparatorChar) >= 0)
+        {
+            return plug.Info.Location.Substring(0, plug.Info.Location.LastIndexOf(Path.DirectorySeparatorChar));
+        }
+        return plug.Info.Location;
     }
 
     /// <summary>
