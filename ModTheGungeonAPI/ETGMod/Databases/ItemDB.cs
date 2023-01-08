@@ -78,11 +78,13 @@ public class ItemDB
     /// <summary>
     /// Adds an item to the list of items in the game.
     /// </summary>
+    /// <param name="proxy">Whether the EncounterDatabaseEntry assigned to the item should be proxy or not. If an encounter database entry is proxy, the item's EncounterTrackable will get all of its values from the proxy 
+    /// EncounterDatabaseEntry.</param>
     /// <param name="value">The item to add.</param>
     /// <param name="dontDestroyOnLoad">If true, the item won't be destroyed when a scene is loaded. Only use for fake prefab items.</param>
     /// <param name="floor">The floor to the fallback loot table of which the gun will be added.</param>
     /// <returns>The id of the added item.</returns>
-    public int AddSpecific(PickupObject value, bool dontDestroyOnLoad = false, string floor = "ANY")
+    public int AddSpecific(bool proxy, PickupObject value, bool dontDestroyOnLoad = false, string floor = "ANY")
     {
         int id = PickupObjectDatabase.Instance.Objects.Count;
         PickupObjectDatabase.Instance.Objects.Add(value);
@@ -95,14 +97,18 @@ public class ItemDB
             }
             ModItemMap[value.name] = value;
             value.PickupObjectId = id;
-            value.encounterTrackable.EncounterGuid = value.encounterTrackable.EncounterGuid.RemoveUnacceptableCharactersForGUID();
-            EncounterDatabaseEntry edbEntry = new(value.encounterTrackable);
-            edbEntry.ProxyEncounterGuid =
-            edbEntry.myGuid = value.encounterTrackable.EncounterGuid;
-            edbEntry.path = "Assets/Resources/ITEMDB:" + value.name + ".prefab";
-            EncounterDatabase.Instance.Entries.Add(edbEntry);
-
-
+            if (value.encounterTrackable != null)
+            {
+                value.encounterTrackable.EncounterGuid = value.encounterTrackable.EncounterGuid.RemoveUnacceptableCharactersForGUID();
+                EncounterDatabaseEntry edbEntry = new(value.encounterTrackable);
+                edbEntry.myGuid = value.encounterTrackable.EncounterGuid;
+                if (proxy)
+                {
+                    edbEntry.ProxyEncounterGuid = edbEntry.myGuid;
+                }
+                edbEntry.path = "Assets/Resources/ITEMDB:" + value.name + ".prefab";
+                EncounterDatabase.Instance.Entries.Add(edbEntry);
+            }
             WeightedGameObject lootGameObject = new()
             {
                 weight = 1f,
@@ -125,6 +131,18 @@ public class ItemDB
             ModLootPerFloor[floor] = loot;
         }
         return id;
+    }
+
+    /// <summary>
+    /// Adds an item to the list of items in the game.
+    /// </summary>
+    /// <param name="value">The item to add.</param>
+    /// <param name="dontDestroyOnLoad">If true, the item won't be destroyed when a scene is loaded. Only use for fake prefab items.</param>
+    /// <param name="floor">The floor to the fallback loot table of which the gun will be added.</param>
+    /// <returns>The id of the added item.</returns>
+    public int AddSpecific(PickupObject value, bool dontDestroyOnLoad = false, string floor = "ANY")
+    {
+        return AddSpecific(true, value, dontDestroyOnLoad, floor);
     }
 
     /// <summary>
