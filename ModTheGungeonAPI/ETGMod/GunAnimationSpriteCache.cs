@@ -48,18 +48,15 @@ internal class GunAnimationSpriteCache
 
         bool update;
         if (_gameSpriteCollections.TryGetValue(collection.name, out var spriteGroup))
-        {
             update = spriteGroup.IdentityObject != collection.spriteDefinitions;
-        }
         else
-        {
-            spriteGroup = new GunAnimationSpriteGroup(collection.name, collection.spriteDefinitions);
-            _gameSpriteCollections[collection.name] = spriteGroup;
             update = true;
-        }
 
         if (!update)
             return false;
+
+        spriteGroup = new GunAnimationSpriteGroup(collection.name, collection.spriteDefinitions);
+        _gameSpriteCollections[collection.name] = spriteGroup;
 
         for (int i = 0; i < collection.spriteDefinitions.Length; i++)
         {
@@ -127,7 +124,7 @@ internal class GunAnimationSpriteCache
         // however some mods setup custom animations. Since those are impossible to index
         // ahead of time in the same way. We are keeping a collection based on generic prefixes that
         // will be matched as "{gunName}_{animationName}".
-        private Dictionary<GunAndAnimationKey, FrameCollection> _gunAndAnimcationFrames;
+        private Dictionary<string, FrameCollection> _gunAndAnimcationFrames;
 
         private Dictionary<string, FrameCollection> _prefixFrames;
 
@@ -135,7 +132,7 @@ internal class GunAnimationSpriteCache
         {
             Name = name;
             IdentityObject = identityObject;
-            _gunAndAnimcationFrames = new Dictionary<GunAndAnimationKey, FrameCollection>();
+            _gunAndAnimcationFrames = new Dictionary<string, FrameCollection>();
             _prefixFrames = new Dictionary<string, FrameCollection>(StringComparer.InvariantCultureIgnoreCase);
         }
 
@@ -148,7 +145,7 @@ internal class GunAnimationSpriteCache
 
         public void SetFrame(string gunName, string animationName, int order, tk2dSpriteCollectionData collection, int index)
         {
-            var key = new GunAndAnimationKey(gunName, animationName);
+            string key = $"GUN_{gunName}_ANIM_${animationName}";
             if (!_gunAndAnimcationFrames.TryGetValue(key, out var frames))
             {
                 frames = new FrameCollection();
@@ -180,7 +177,7 @@ internal class GunAnimationSpriteCache
         public bool TryGetAnimationFrames(string gunName, string animationName, out tk2dSpriteAnimationFrame[] frames)
         {
             FrameCollection frameCollection;
-            var key = new GunAndAnimationKey(gunName, animationName);
+            string key = $"GUN_{gunName}_ANIM_${animationName}";
             if (_gunAndAnimcationFrames.TryGetValue(key, out frameCollection))
             {
                 frames = frameCollection.GetFrames();
@@ -208,43 +205,6 @@ internal class GunAnimationSpriteCache
 
             frames = null;
             return false;
-        }
-
-        internal readonly struct GunAndAnimationKey : IEquatable<GunAndAnimationKey>
-        {
-            public GunAndAnimationKey(string gun, string animation)
-            {
-                GunName = gun;
-                Animation = animation;
-            }
-
-            public string GunName { get; }
-
-            public string Animation { get; }
-
-            public override int GetHashCode()
-            {
-                int hc = ((GunName?.GetHashCode() ?? 0) * 17) << 16;
-                hc ^= Animation?.GetHashCode() ?? 0;
-                return hc;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (obj is GunAndAnimationKey other)
-                {
-                    return Equals(this, other);
-                }
-
-                return false;
-            }
-
-            public bool Equals(GunAndAnimationKey other) => Equals(this, other);
-
-            private static bool Equals(in GunAndAnimationKey left, in GunAndAnimationKey right)
-            {
-                return left.GunName == right.GunName && left.Animation == right.Animation;
-            }
         }
 
         internal class FrameCollection
