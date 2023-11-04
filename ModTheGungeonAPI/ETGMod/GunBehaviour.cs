@@ -9,6 +9,7 @@ using System.Reflection;
 using HarmonyLib;
 using Dungeonator;
 using MonoMod.Cil;
+using System.Reflection.Emit;
 
 /// <summary>
 /// Base class for gun modifier behaviours.
@@ -34,10 +35,14 @@ public class GunBehaviour : BraveBehaviour
 			gun.OnPostFired += OnPostFired;
 			gun.OnAmmoChanged += OnAmmoChanged;
 			gun.OnBurstContinued += OnBurstContinued;
-			gun.OnPreFireProjectileModifier += OnPreFireProjectileModifier;
-			gun.OnReflectedBulletDamageModifier += OnReflectedBulletDamageModifier;
-			gun.OnReflectedBulletScaleModifier += OnReflectedBulletScaleModifier;
-			gun.ModifyActiveCooldownDamage += ModifyActiveCooldownDamage;
+			if(IsOverriden(nameof(OnPreFireProjectileModifier)))
+				gun.OnPreFireProjectileModifier += OnPreFireProjectileModifier;
+			if (IsOverriden(nameof(OnReflectedBulletDamageModifier)))
+				gun.OnReflectedBulletDamageModifier += OnReflectedBulletDamageModifier;
+			if (IsOverriden(nameof(OnReflectedBulletScaleModifier)))
+				gun.OnReflectedBulletScaleModifier += OnReflectedBulletScaleModifier;
+			if (IsOverriden(nameof(ModifyActiveCooldownDamage)))
+				gun.ModifyActiveCooldownDamage += ModifyActiveCooldownDamage;
 			if (gun.CurrentOwner != null)
 			{
 				OnInitializedWithOwner(gun.CurrentOwner);
@@ -45,6 +50,12 @@ public class GunBehaviour : BraveBehaviour
 			}
 		}
 	}
+
+	private bool IsOverriden(string name)
+    {
+		var method = GetType().GetMethod(name);
+		return method != null && method.DeclaringType != typeof(GunBehaviour);
+    }
 
 	private void InternalOnInitializedWithOwner(GameActor owner)
 	{
@@ -363,22 +374,25 @@ public class GunBehaviour : BraveBehaviour
 	private static void ProcessThrownGun(Gun __instance)
     {
 		var proj = __instance.GetComponentInParent<Projectile>();
-		var advanced = __instance.GetComponent<GunBehaviour>();
-		if (proj != null && advanced != null)
-        {
+		var behavs = __instance.GetComponents<GunBehaviour>();
+		if (proj != null && behavs != null && behavs.Length > 0)
+		{
 			var own = proj.Owner;
-			if(own == null)
-            {
+			if (own == null)
+			{
 				return;
-            }
-			advanced.OnGunThrown(__instance, own, proj);
-			if(own is PlayerController player)
-			{
-				advanced.OnGunThrownPlayer(__instance, player, proj);
 			}
-			else if(own is AIActor enemy)
+			foreach (var advanced in behavs)
 			{
-				advanced.OnGunThrownEnemy(__instance, enemy, proj);
+				advanced.OnGunThrown(__instance, own, proj);
+				if (own is PlayerController player)
+				{
+					advanced.OnGunThrownPlayer(__instance, player, proj);
+				}
+				else if (own is AIActor enemy)
+				{
+					advanced.OnGunThrownEnemy(__instance, enemy, proj);
+				}
 			}
         }
     }
@@ -387,10 +401,13 @@ public class GunBehaviour : BraveBehaviour
 	[HarmonyPostfix]
 	private static void AddBeamTracker(Gun __instance)
 	{
-		var advanced = __instance.GetComponent<GunBehaviour>();
-		if (advanced != null && __instance.LastProjectile != null && __instance.LastProjectile.GetComponent<BeamController>() != null)
+		var behavs = __instance.GetComponents<GunBehaviour>();
+		if (behavs != null && behavs.Length > 0 && __instance.LastProjectile != null && __instance.LastProjectile.GetComponent<BeamController>() != null)
         {
-			__instance.LastProjectile.gameObject.GetOrAddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
+			foreach (var advanced in behavs)
+			{
+				__instance.LastProjectile.gameObject.GetOrAddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
+			}
         }
     }
 
@@ -398,10 +415,16 @@ public class GunBehaviour : BraveBehaviour
 	[HarmonyPostfix]
 	private static void PostProcessBeam(BasicBeamController __instance)
     {
-		var tracker = __instance.GetComponent<BeamBehaviourTracker>();
-		if(tracker != null && tracker.gunBehaviour != null)
+		var trackers = __instance.GetComponents<BeamBehaviourTracker>();
+		if(trackers != null && trackers.Length > 0)
         {
-			tracker.gunBehaviour.PostProcessBeam(__instance);
+			foreach (var tracker in trackers)
+			{
+				if (tracker.gunBehaviour != null)
+				{
+					tracker.gunBehaviour.PostProcessBeam(__instance);
+				}
+			}
         }
     }
 
@@ -418,13 +441,58 @@ public class GunBehaviour : BraveBehaviour
 	{
 		if(__state <= 0f)
 		{
-			var tracker = __instance.GetComponent<BeamBehaviourTracker>();
-			if (tracker != null && tracker.gunBehaviour != null)
+			var trackers = __instance.GetComponents<BeamBehaviourTracker>();
+			if (trackers != null && trackers.Length > 0)
 			{
-				tracker.gunBehaviour.PostProcessBeamChanceTick(__instance);
+				foreach (var tracker in trackers)
+				{
+					if (tracker.gunBehaviour != null)
+					{
+						tracker.gunBehaviour.PostProcessBeamChanceTick(__instance);
+					}
+				}
 			}
 		}
 	}
+
+	[HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateAmmoUIForModule))]
+	[HarmonyTranspiler]
+	private static IEnumerable<CodeInstruction> AmmoCount(IEnumerable<CodeInstruction> instructions)
+	{
+		var firstTryLoadingArg1 = true;
+		foreach (var instruction in instructions)
+		{
+			yield return instruction;
+			if (instruction.opcode == OpCodes.Ldarg_1 && firstTryLoadingArg1)
+			{
+				firstTryLoadingArg1 = false;
+				yield return new CodeInstruction(OpCodes.Ldarg, 8);
+				yield return new CodeInstruction(OpCodes.Ldarg, 7);
+				yield return new CodeInstruction(OpCodes.Ldloca, 0);
+				yield return new CodeInstruction(OpCodes.Ldloca, 1);
+				yield return new CodeInstruction(OpCodes.Call, modcount);
+			}
+		}
+		yield break;
+	}
+
+	private static readonly MethodInfo modcount = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.ModModuleAmmoCounts));
+
+	private static void ModModuleAmmoCounts(Gun gun, ProjectileModule mod, ref int currentModuleAmmo, ref int maxModuleAmmo)
+	{
+		var behavs = gun.GetComponents<GunBehaviour>();
+		if (behavs != null && behavs.Length > 0)
+		{
+			foreach (var advanced in behavs)
+			{
+				advanced.ModifyClipCount(gun, mod, gun.CurrentOwner as PlayerController, ref currentModuleAmmo, ref maxModuleAmmo);
+			}
+		}
+	}
+
+	public virtual void ModifyClipCount(Gun gun, ProjectileModule mod, PlayerController player, ref int currentModuleAmmo, ref int maxModuleAmmo)
+    {
+    }
 
 	/// <summary>
 	/// Get data from the given list of data, cast it to the type T and increment the data index.
