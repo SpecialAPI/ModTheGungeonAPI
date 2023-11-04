@@ -406,7 +406,7 @@ public class GunBehaviour : BraveBehaviour
         {
 			foreach (var advanced in behavs)
 			{
-				__instance.LastProjectile.gameObject.GetOrAddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
+				__instance.LastProjectile.gameObject.AddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
 			}
         }
     }
