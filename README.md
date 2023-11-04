@@ -23,6 +23,7 @@ Install either [Thunderstore Mod Manager](https://www.overwolf.com/app/Thunderst
 
 # Credits:
  * SpecialAPI - main developer.
+ * Captain Pretzel - optimizing the API to make mods load faster.
  * An3s - initial console + debug log port.
  * KubeRoot - updating SGUI to the latest version.
  * KyleTheScientist - base MTG example mod zips.

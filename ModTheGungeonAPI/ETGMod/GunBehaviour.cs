@@ -490,6 +490,14 @@ public class GunBehaviour : BraveBehaviour
 		}
 	}
 
+	/// <summary>
+	/// Modifies the amount of current shots left in the clip and the max clip capacity that's visually displayed in the clip UI.
+	/// </summary>
+	/// <param name="gun">The gun that the clip belongs to.</param>
+	/// <param name="mod">The module on which the clip is based.</param>
+	/// <param name="player">The owner of the gun.</param>
+	/// <param name="currentModuleAmmo">The current value of the current shots left in the clip.</param>
+	/// <param name="maxModuleAmmo">The current value of the max clip capacity.</param>
 	public virtual void ModifyClipCount(Gun gun, ProjectileModule mod, PlayerController player, ref int currentModuleAmmo, ref int maxModuleAmmo)
     {
     }
