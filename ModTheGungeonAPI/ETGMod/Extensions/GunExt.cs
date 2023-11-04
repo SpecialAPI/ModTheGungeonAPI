@@ -7,6 +7,8 @@ public static class GunExt
 
     private static GunAnimationSpriteCache SpriteCache = new GunAnimationSpriteCache();
 
+    public static readonly Dictionary<string, tk2dSpriteAnimationClip> addedClips = new();
+
     /// <summary>
     /// Sets the given item's name to the given string.
     /// </summary>
@@ -46,22 +48,33 @@ public static class GunExt
     {
         collection ??= ETGMod.Databases.Items.WeaponCollection;
 
-        gun.idleAnimation = gun.UpdateAnimation("idle", collection);
-        gun.dodgeAnimation = gun.UpdateAnimation("dodge", collection);
-        gun.introAnimation = gun.UpdateAnimation("intro", collection, true);
-        gun.emptyAnimation = gun.UpdateAnimation("empty", collection);
-        gun.shootAnimation = gun.UpdateAnimation("fire", collection, true);
-        gun.reloadAnimation = gun.UpdateAnimation("reload", collection, true);
-        gun.chargeAnimation = gun.UpdateAnimation("charge", collection);
-        gun.outOfAmmoAnimation = gun.UpdateAnimation("out_of_ammo", collection);
-        gun.dischargeAnimation = gun.UpdateAnimation("discharge", collection);
-        gun.finalShootAnimation = gun.UpdateAnimation("final_fire", collection, true);
-        gun.emptyReloadAnimation = gun.UpdateAnimation("empty_reload", collection, true);
-        gun.criticalFireAnimation = gun.UpdateAnimation("critical_fire", collection, true);
-        gun.enemyPreFireAnimation = gun.UpdateAnimation("enemy_pre_fire", collection);
-        gun.alternateShootAnimation = gun.UpdateAnimation("alternate_shoot", collection, true);
-        gun.alternateReloadAnimation = gun.UpdateAnimation("alternate_reload", collection, true);
-        gun.alternateIdleAnimation = gun.UpdateAnimation("alternate_idle", collection);
+        var clips = new List<tk2dSpriteAnimationClip>();
+
+        gun.idleAnimation = gun.UpdateAnimationAddClipsLater("idle", collection, clipsToAddLater: clips);
+        gun.dodgeAnimation = gun.UpdateAnimationAddClipsLater("dodge", collection, clipsToAddLater: clips);
+        gun.introAnimation = gun.UpdateAnimationAddClipsLater("intro", collection, true, clipsToAddLater: clips);
+        gun.emptyAnimation = gun.UpdateAnimationAddClipsLater("empty", collection, clipsToAddLater: clips);
+        gun.shootAnimation = gun.UpdateAnimationAddClipsLater("fire", collection, true, clipsToAddLater: clips);
+        gun.reloadAnimation = gun.UpdateAnimationAddClipsLater("reload", collection, true, clipsToAddLater: clips);
+        gun.chargeAnimation = gun.UpdateAnimationAddClipsLater("charge", collection, clipsToAddLater: clips);
+        gun.outOfAmmoAnimation = gun.UpdateAnimationAddClipsLater("out_of_ammo", collection, clipsToAddLater: clips);
+        gun.dischargeAnimation = gun.UpdateAnimationAddClipsLater("discharge", collection, clipsToAddLater: clips);
+        gun.finalShootAnimation = gun.UpdateAnimationAddClipsLater("final_fire", collection, true, clipsToAddLater: clips);
+        gun.emptyReloadAnimation = gun.UpdateAnimationAddClipsLater("empty_reload", collection, true, clipsToAddLater: clips);
+        gun.criticalFireAnimation = gun.UpdateAnimationAddClipsLater("critical_fire", collection, true, clipsToAddLater: clips);
+        gun.enemyPreFireAnimation = gun.UpdateAnimationAddClipsLater("enemy_pre_fire", collection, clipsToAddLater: clips);
+        gun.alternateShootAnimation = gun.UpdateAnimationAddClipsLater("alternate_shoot", collection, true, clipsToAddLater: clips);
+        gun.alternateReloadAnimation = gun.UpdateAnimationAddClipsLater("alternate_reload", collection, true, clipsToAddLater: clips);
+        gun.alternateIdleAnimation = gun.UpdateAnimationAddClipsLater("alternate_idle", collection, clipsToAddLater: clips);
+
+        if(clips.Count > 0)
+        {
+            Array.Resize(ref gun.spriteAnimator.Library.clips, gun.spriteAnimator.Library.clips.Length + clips.Count);
+            for(int i = 0; i < clips.Count; i++)
+            {
+                gun.spriteAnimator.Library.clips[gun.spriteAnimator.Library.clips.Length - clips.Count + i] = clips[i];
+            }
+        }
     }
 
     /// <summary>
@@ -74,6 +87,11 @@ public static class GunExt
     /// <returns>The full name for the created or updated animation.</returns>
     public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false)
     {
+        return UpdateAnimationAddClipsLater(gun, name, collection, returnToIdle);
+    }
+
+    public static string UpdateAnimationAddClipsLater(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false, List<tk2dSpriteAnimationClip> clipsToAddLater = null)
+    {
         collection ??= ETGMod.Databases.Items.WeaponCollection;
         SpriteCache.UpdateCollection(collection);
         var frames = SpriteCache.TryGetAnimationFrames(collection.name, gun.name, name);
@@ -82,18 +100,25 @@ public static class GunExt
             return null;
 
         string clipName = gun.name + "_" + name;
-        tk2dSpriteAnimationClip clip = gun.spriteAnimator.Library.GetClipByName(clipName);
-        if (clip == null)
+        if (!addedClips.TryGetValue(clipName, out var clip))
         {
-            clip = new tk2dSpriteAnimationClip();
+            clip = new();
             clip.name = clipName;
             clip.fps = 15;
             if (returnToIdle)
             {
                 clip.wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
             }
-            Array.Resize(ref gun.spriteAnimator.Library.clips, gun.spriteAnimator.Library.clips.Length + 1);
-            gun.spriteAnimator.Library.clips[gun.spriteAnimator.Library.clips.Length - 1] = clip;
+            addedClips[clipName] = clip;
+            if(clipsToAddLater == null)
+            {
+                Array.Resize(ref gun.spriteAnimator.Library.clips, gun.spriteAnimator.Library.clips.Length + 1);
+                gun.spriteAnimator.Library.clips[gun.spriteAnimator.Library.clips.Length - 1] = clip;
+            }
+            else
+            {
+                clipsToAddLater.Add(clip);
+            }
         }
 
         clip.frames = frames;
