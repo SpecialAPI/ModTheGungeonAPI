@@ -369,6 +369,16 @@ public class GunBehaviour : BraveBehaviour
 	{
 	}
 
+	/// <summary>
+	/// Runs every tick when a beam fired by the gun this behaviour is applied to hits a rigidbody.
+	/// </summary>
+	/// <param name="beam">The beam fired by the gun this behaviour is applied to.</param>
+	/// <param name="hitRigidbody">The rigidbody hit by the beam.</param>
+	/// <param name="tickRate">Delta time.</param>
+	public virtual void PostProcessBeamTick(BeamController beam, SpeculativeRigidbody hitRigidbody, float tickRate)
+    {
+    }
+
 	[HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
 	[HarmonyPostfix]
 	private static void ProcessThrownGun(Gun __instance)
@@ -414,10 +424,10 @@ public class GunBehaviour : BraveBehaviour
 	[HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.Start))]
 	[HarmonyPostfix]
 	private static void PostProcessBeam(BasicBeamController __instance)
-    {
+	{
 		var trackers = __instance.GetComponents<BeamBehaviourTracker>();
-		if(trackers != null && trackers.Length > 0)
-        {
+		if (trackers != null && trackers.Length > 0)
+		{
 			foreach (var tracker in trackers)
 			{
 				if (tracker.gunBehaviour != null)
@@ -425,31 +435,38 @@ public class GunBehaviour : BraveBehaviour
 					tracker.gunBehaviour.PostProcessBeam(__instance);
 				}
 			}
-        }
-    }
-
-	[HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
-	[HarmonyPrefix]
-	private static void PostProcessBeamChanceTick(BasicBeamController __instance, ref float __state)
-	{
-		__state = __instance.m_chanceTick;
+		}
 	}
 
 	[HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
-	[HarmonyPostfix]
-	private static void PostProcessBeamChanceTick2(BasicBeamController __instance, float __state)
+	[HarmonyTranspiler]
+	private static IEnumerable<CodeInstruction> ChanceTick(IEnumerable<CodeInstruction> instructions)
 	{
-		if(__state <= 0f)
+		foreach (var instruction in instructions)
 		{
-			var trackers = __instance.GetComponents<BeamBehaviourTracker>();
-			if (trackers != null && trackers.Length > 0)
+			yield return instruction;
+			if (instruction.Calls(processchancetick))
 			{
-				foreach (var tracker in trackers)
+				yield return new CodeInstruction(OpCodes.Ldarg_0);
+				yield return new CodeInstruction(OpCodes.Call, triggerprocesschancetick);
+			}
+		}
+		yield break;
+	}
+
+	private static readonly MethodInfo processchancetick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamChanceTick));
+	private static readonly MethodInfo triggerprocesschancetick = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.TriggerPostProcessChanceTick));
+
+	private static void TriggerPostProcessChanceTick(BeamController beam)
+	{
+		var trackers = beam.GetComponents<BeamBehaviourTracker>();
+		if (trackers != null && trackers.Length > 0)
+		{
+			foreach (var tracker in trackers)
+			{
+				if (tracker.gunBehaviour != null)
 				{
-					if (tracker.gunBehaviour != null)
-					{
-						tracker.gunBehaviour.PostProcessBeamChanceTick(__instance);
-					}
+					tracker.gunBehaviour.PostProcessBeamChanceTick(beam);
 				}
 			}
 		}
@@ -486,6 +503,54 @@ public class GunBehaviour : BraveBehaviour
 			foreach (var advanced in behavs)
 			{
 				advanced.ModifyClipCount(gun, mod, gun.CurrentOwner as PlayerController, ref currentModuleAmmo, ref maxModuleAmmo);
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.FrameUpdate))]
+    [HarmonyTranspiler]
+    private static IEnumerable<CodeInstruction> FrameUpdate(IEnumerable<CodeInstruction> instructions)
+    {
+        var firsttrycallingpostprocessbeamtick = true;
+        var firstldarg0afterpostprocessbeamtick = false;
+        foreach (var instruction in instructions)
+        {
+            yield return instruction;
+            if (instruction.Calls(dopostprocessbeamtick) && firsttrycallingpostprocessbeamtick)
+            {
+				firsttrycallingpostprocessbeamtick = false;
+				firstldarg0afterpostprocessbeamtick = true;
+            }
+			if(instruction.opcode == OpCodes.Ldarg_0 && firstldarg0afterpostprocessbeamtick)
+            {
+				firstldarg0afterpostprocessbeamtick = false;
+				yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
+				yield return new CodeInstruction(OpCodes.Call, deltatime);
+				yield return new CodeInstruction(OpCodes.Call, triggerpostprocessbeamtick);
+				yield return new CodeInstruction(OpCodes.Ldarg_0);
+            }
+        }
+        yield break;
+    }
+
+	private static readonly MethodInfo dopostprocessbeamtick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamTick));
+	private static readonly MethodInfo deltatime = AccessTools.PropertyGetter(typeof(BraveTime), nameof(BraveTime.DeltaTime));
+	private static readonly MethodInfo triggerpostprocessbeamtick = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.TriggerPostProcessBeamTick));
+
+	private static void TriggerPostProcessBeamTick(BeamController beam, SpeculativeRigidbody hitRigidbody, float tickRate)
+    {
+		if(beam.projectile.baseData.damage != 0)
+		{
+			var trackers = beam.GetComponents<BeamBehaviourTracker>();
+			if (trackers != null && trackers.Length > 0)
+			{
+				foreach (var tracker in trackers)
+				{
+					if (tracker.gunBehaviour != null)
+					{
+						tracker.gunBehaviour.PostProcessBeamTick(beam, hitRigidbody, tickRate);
+					}
+				}
 			}
 		}
 	}
