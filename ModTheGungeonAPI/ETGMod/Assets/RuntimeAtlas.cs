@@ -85,7 +85,7 @@ public class RuntimeAtlasPacker
 /// </summary>
 public class RuntimeAtlasPage
 {
-    public static int DefaultSize = Math.Min(SystemInfo.maxTextureSize, 4096);
+    public static int DefaultSize = Math.Min(SystemInfo.maxTextureSize, 1024);
 
     public List<RuntimeAtlasSegment> Segments = new List<RuntimeAtlasSegment>();
     public Texture2D Texture;
