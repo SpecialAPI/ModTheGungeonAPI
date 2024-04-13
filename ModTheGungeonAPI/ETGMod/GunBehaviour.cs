@@ -23,8 +23,8 @@ public class GunBehaviour : BraveBehaviour
 		if (gun != null)
 		{
 			OnCreation(gun);
-			gun.OnInitializedWithOwner += OnInitializedWithOwner;
-			gun.OnInitializedWithOwner += InternalOnInitializedWithOwner;
+            gun.OnInitializedWithOwner += InternalOnInitializedWithOwner;
+            gun.OnInitializedWithOwner += OnInitializedWithOwner;
 			gun.PostProcessProjectile += PostProcessProjectile;
 			gun.PostProcessVolley += PostProcessVolley;
 			gun.OnDropped += OnDropped;
@@ -44,8 +44,10 @@ public class GunBehaviour : BraveBehaviour
 			if (IsOverriden(nameof(ModifyActiveCooldownDamage)))
 				gun.ModifyActiveCooldownDamage += ModifyActiveCooldownDamage;
 			if (gun.CurrentOwner != null)
-			{
-				OnInitializedWithOwner(gun.CurrentOwner);
+            {
+                LastRegisteredOwner = gun.CurrentOwner;
+
+                OnInitializedWithOwner(gun.CurrentOwner);
 				InternalOnInitializedWithOwner(gun.CurrentOwner);
 			}
 		}
@@ -62,26 +64,26 @@ public class GunBehaviour : BraveBehaviour
 		if (owner == null)
 		{
 			return;
-		}
-		if (owner is PlayerController player)
+        }
+
+        if (owner is PlayerController player)
 		{
 			OnPlayerPickup(player);
 		}
 		else if (owner is AIActor enemy)
 		{
 			OnEnemyPickup(enemy);
-		}
-	}
+        }
+    }
 
 	private void InternalOnDropped()
 	{
-		if (gun?.CurrentOwner != null)
-		{
-			if (gun.CurrentOwner is PlayerController player)
-			{
-				OnDroppedByPlayer(player);
-			}
-		}
+		if (LastRegisteredOwner != null && LastRegisteredOwner is PlayerController player)
+        {
+            OnDroppedByPlayer(player);
+        }
+
+		LastRegisteredOwner = null;
 	}
 
 	/// <summary>
@@ -599,20 +601,29 @@ public class GunBehaviour : BraveBehaviour
 	/// </summary>
 	[NonSerialized]
 	public Gun gun;
+
 	/// <summary>
 	/// Generic GameActor owner of this gun.
 	/// </summary>
-	public GameActor GenericOwner => gun?.CurrentOwner;
+	public GameActor GenericOwner => (gun != null && gun.CurrentOwner != null) ? gun.CurrentOwner : LastRegisteredOwner;
+
 	/// <summary>
 	/// PlayerController owner of the gun this behaviour is applied to if the owner is a player, null otherwise.
 	/// </summary>
 	public PlayerController PlayerOwner => GenericOwner as PlayerController;
+
 	/// <summary>
 	/// AIActor owner of the gun this behaviour is applied to if the owner is an enemy, null otherwise.
 	/// </summary>
 	public AIActor EnemyOwner => GenericOwner as AIActor;
+
 	/// <summary>
 	/// True if the gun was ever picked up, false otherwise.
 	/// </summary>
-	public bool EverPickedUp => (gun?.HasBeenPickedUp).GetValueOrDefault();
+	public bool EverPickedUp => gun != null ? gun.HasBeenPickedUp : false;
+
+	/// <summary>
+	/// The current owner of the gun this is applied to. Unlike gun.CurrentOwner, this is reset after OnDropped instead of before.
+	/// </summary>
+	public GameActor LastRegisteredOwner;
 }
