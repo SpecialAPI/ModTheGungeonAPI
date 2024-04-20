@@ -21,11 +21,7 @@ public static partial class ETGMod
         {
             return "";
         }
-        if (plug.Info.Location.LastIndexOf(Path.DirectorySeparatorChar) >= 0)
-        {
-            return plug.Info.Location.Substring(0, plug.Info.Location.LastIndexOf(Path.DirectorySeparatorChar));
-        }
-        return plug.Info.Location;
+        return Path.GetDirectoryName(plug.Info.Location);
     }
 
     /// <summary>
