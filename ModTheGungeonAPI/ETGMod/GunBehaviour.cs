@@ -9,7 +9,7 @@ using System.Reflection;
 using HarmonyLib;
 using Dungeonator;
 using MonoMod.Cil;
-using System.Reflection.Emit;
+using Mono.Cecil.Cil;
 
 /// <summary>
 /// Base class for gun modifier behaviours.
@@ -53,6 +53,50 @@ public class GunBehaviour : BraveBehaviour
 		}
 	}
 
+	/// <summary>
+	/// Runs when either this or the gun this is applied to is destroyed. Note that after this method runs both <see cref="gun"/> and <see cref="LastRegisteredOwner"/> are set to null.
+	/// </summary>
+	public override void OnDestroy()
+	{
+		base.OnDestroy();
+
+		if(gun != null)
+		{
+            gun.OnInitializedWithOwner -= InternalOnInitializedWithOwner;
+            gun.OnInitializedWithOwner -= OnInitializedWithOwner;
+            gun.PostProcessProjectile -= PostProcessProjectile;
+            gun.PostProcessVolley -= PostProcessVolley;
+            gun.OnDropped -= OnDropped;
+            gun.OnDropped -= InternalOnDropped;
+            gun.OnAutoReload -= OnAutoReload;
+            gun.OnReloadPressed -= OnReloadPressed;
+            gun.OnFinishAttack -= OnFinishAttack;
+            gun.OnPostFired -= OnPostFired;
+            gun.OnAmmoChanged -= OnAmmoChanged;
+            gun.OnBurstContinued -= OnBurstContinued;
+            if (IsOverriden(nameof(OnPreFireProjectileModifier)))
+                gun.OnPreFireProjectileModifier -= OnPreFireProjectileModifier;
+            if (IsOverriden(nameof(OnReflectedBulletDamageModifier)))
+                gun.OnReflectedBulletDamageModifier -= OnReflectedBulletDamageModifier;
+            if (IsOverriden(nameof(OnReflectedBulletScaleModifier)))
+                gun.OnReflectedBulletScaleModifier -= OnReflectedBulletScaleModifier;
+            if (IsOverriden(nameof(ModifyActiveCooldownDamage)))
+                gun.ModifyActiveCooldownDamage -= ModifyActiveCooldownDamage;
+
+            if (LastRegisteredOwner != null)
+            {
+                DisableEffect(LastRegisteredOwner);
+
+                if (LastRegisteredOwner is PlayerController player)
+                    DisableEffectPlayer(player);
+                else if (LastRegisteredOwner is AIActor enemy)
+                    DisableEffectEnemy(enemy);
+            }
+        }
+
+        LastRegisteredOwner = null;
+    }
+
 	private bool IsOverriden(string name)
     {
 		var method = GetType().GetMethod(name);
@@ -78,12 +122,44 @@ public class GunBehaviour : BraveBehaviour
 
 	private void InternalOnDropped()
 	{
-		if (LastRegisteredOwner != null && LastRegisteredOwner is PlayerController player)
+		if (LastRegisteredOwner != null)
         {
-            OnDroppedByPlayer(player);
+			DisableEffect(LastRegisteredOwner);
+
+			if (LastRegisteredOwner is PlayerController player)
+            {
+                OnDroppedByPlayer(player);
+				DisableEffectPlayer(player);
+            }
+			else if(LastRegisteredOwner is AIActor enemy)
+				DisableEffectEnemy(enemy);
         }
 
 		LastRegisteredOwner = null;
+	}
+
+	/// <summary>
+	/// Runs when the gun is either dropped or destroyed.
+	/// </summary>
+	/// <param name="owner">The owner of the gun when it was dropped or destroyed.</param>
+	public virtual void DisableEffect(GameActor owner)
+	{
+	}
+
+    /// <summary>
+    /// Runs when the gun is either dropped or destroyed while owned by a player.
+    /// </summary>
+    /// <param name="player">The player owner of the gun when it was dropped or destroyed.</param>
+    public virtual void DisableEffectPlayer(PlayerController player)
+	{
+	}
+
+    /// <summary>
+    /// Runs when the gun is either dropped or destroyed while owned by a player.
+    /// </summary>
+    /// <param name="enemy">The enemy owner of the gun when it was dropped or destroyed.</param>
+    public virtual void DisableEffectEnemy(AIActor enemy)
+	{
 	}
 
 	/// <summary>
@@ -381,182 +457,6 @@ public class GunBehaviour : BraveBehaviour
     {
     }
 
-	[HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
-	[HarmonyPostfix]
-	private static void ProcessThrownGun(Gun __instance)
-    {
-		var proj = __instance.GetComponentInParent<Projectile>();
-		var behavs = __instance.GetComponents<GunBehaviour>();
-		if (proj != null && behavs != null && behavs.Length > 0)
-		{
-			var own = proj.Owner;
-			if (own == null)
-			{
-				return;
-			}
-			foreach (var advanced in behavs)
-			{
-				advanced.OnGunThrown(__instance, own, proj);
-				if (own is PlayerController player)
-				{
-					advanced.OnGunThrownPlayer(__instance, player, proj);
-				}
-				else if (own is AIActor enemy)
-				{
-					advanced.OnGunThrownEnemy(__instance, enemy, proj);
-				}
-			}
-        }
-    }
-
-	[HarmonyPatch(typeof(Gun), nameof(Gun.BeginFiringBeam))]
-	[HarmonyPostfix]
-	private static void AddBeamTracker(Gun __instance)
-	{
-		var behavs = __instance.GetComponents<GunBehaviour>();
-		if (behavs != null && behavs.Length > 0 && __instance.LastProjectile != null && __instance.LastProjectile.GetComponent<BeamController>() != null)
-        {
-			foreach (var advanced in behavs)
-			{
-				__instance.LastProjectile.gameObject.AddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
-			}
-        }
-    }
-
-	[HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.Start))]
-	[HarmonyPostfix]
-	private static void PostProcessBeam(BasicBeamController __instance)
-	{
-		var trackers = __instance.GetComponents<BeamBehaviourTracker>();
-		if (trackers != null && trackers.Length > 0)
-		{
-			foreach (var tracker in trackers)
-			{
-				if (tracker.gunBehaviour != null)
-				{
-					tracker.gunBehaviour.PostProcessBeam(__instance);
-				}
-			}
-		}
-	}
-
-	[HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
-	[HarmonyTranspiler]
-	private static IEnumerable<CodeInstruction> ChanceTick(IEnumerable<CodeInstruction> instructions)
-	{
-		foreach (var instruction in instructions)
-		{
-			yield return instruction;
-			if (instruction.Calls(processchancetick))
-			{
-				yield return new CodeInstruction(OpCodes.Ldarg_0);
-				yield return new CodeInstruction(OpCodes.Call, triggerprocesschancetick);
-			}
-		}
-		yield break;
-	}
-
-	private static readonly MethodInfo processchancetick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamChanceTick));
-	private static readonly MethodInfo triggerprocesschancetick = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.TriggerPostProcessChanceTick));
-
-	private static void TriggerPostProcessChanceTick(BeamController beam)
-	{
-		var trackers = beam.GetComponents<BeamBehaviourTracker>();
-		if (trackers != null && trackers.Length > 0)
-		{
-			foreach (var tracker in trackers)
-			{
-				if (tracker.gunBehaviour != null)
-				{
-					tracker.gunBehaviour.PostProcessBeamChanceTick(beam);
-				}
-			}
-		}
-	}
-
-	[HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateAmmoUIForModule))]
-	[HarmonyTranspiler]
-	private static IEnumerable<CodeInstruction> AmmoCount(IEnumerable<CodeInstruction> instructions)
-	{
-		var firstTryLoadingArg1 = true;
-		foreach (var instruction in instructions)
-		{
-			yield return instruction;
-			if (instruction.opcode == OpCodes.Ldarg_1 && firstTryLoadingArg1)
-			{
-				firstTryLoadingArg1 = false;
-				yield return new CodeInstruction(OpCodes.Ldarg, 8);
-				yield return new CodeInstruction(OpCodes.Ldarg, 7);
-				yield return new CodeInstruction(OpCodes.Ldloca, 0);
-				yield return new CodeInstruction(OpCodes.Ldloca, 1);
-				yield return new CodeInstruction(OpCodes.Call, modcount);
-			}
-		}
-		yield break;
-	}
-
-	private static readonly MethodInfo modcount = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.ModModuleAmmoCounts));
-
-	private static void ModModuleAmmoCounts(Gun gun, ProjectileModule mod, ref int currentModuleAmmo, ref int maxModuleAmmo)
-	{
-		var behavs = gun.GetComponents<GunBehaviour>();
-		if (behavs != null && behavs.Length > 0)
-		{
-			foreach (var advanced in behavs)
-			{
-				advanced.ModifyClipCount(gun, mod, gun.CurrentOwner as PlayerController, ref currentModuleAmmo, ref maxModuleAmmo);
-			}
-		}
-	}
-
-	[HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.FrameUpdate))]
-    [HarmonyTranspiler]
-    private static IEnumerable<CodeInstruction> FrameUpdate(IEnumerable<CodeInstruction> instructions)
-    {
-        var firsttrycallingpostprocessbeamtick = true;
-        var firstldarg0afterpostprocessbeamtick = false;
-        foreach (var instruction in instructions)
-        {
-            yield return instruction;
-            if (instruction.Calls(dopostprocessbeamtick) && firsttrycallingpostprocessbeamtick)
-            {
-				firsttrycallingpostprocessbeamtick = false;
-				firstldarg0afterpostprocessbeamtick = true;
-            }
-			if(instruction.opcode == OpCodes.Ldarg_0 && firstldarg0afterpostprocessbeamtick)
-            {
-				firstldarg0afterpostprocessbeamtick = false;
-				yield return new CodeInstruction(OpCodes.Ldloc_S, 7);
-				yield return new CodeInstruction(OpCodes.Call, deltatime);
-				yield return new CodeInstruction(OpCodes.Call, triggerpostprocessbeamtick);
-				yield return new CodeInstruction(OpCodes.Ldarg_0);
-            }
-        }
-        yield break;
-    }
-
-	private static readonly MethodInfo dopostprocessbeamtick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamTick));
-	private static readonly MethodInfo deltatime = AccessTools.PropertyGetter(typeof(BraveTime), nameof(BraveTime.DeltaTime));
-	private static readonly MethodInfo triggerpostprocessbeamtick = AccessTools.Method(typeof(GunBehaviour), nameof(GunBehaviour.TriggerPostProcessBeamTick));
-
-	private static void TriggerPostProcessBeamTick(BeamController beam, SpeculativeRigidbody hitRigidbody, float tickRate)
-    {
-		if(beam.projectile.baseData.damage != 0)
-		{
-			var trackers = beam.GetComponents<BeamBehaviourTracker>();
-			if (trackers != null && trackers.Length > 0)
-			{
-				foreach (var tracker in trackers)
-				{
-					if (tracker.gunBehaviour != null)
-					{
-						tracker.gunBehaviour.PostProcessBeamTick(beam, hitRigidbody, tickRate);
-					}
-				}
-			}
-		}
-	}
-
 	/// <summary>
 	/// Modifies the amount of current shots left in the clip and the max clip capacity that's visually displayed in the clip UI.
 	/// </summary>
@@ -626,4 +526,175 @@ public class GunBehaviour : BraveBehaviour
 	/// The current owner of the gun this is applied to. Unlike gun.CurrentOwner, this is reset after OnDropped instead of before.
 	/// </summary>
 	public GameActor LastRegisteredOwner;
+
+    #region Harmony Patches - Postfixes
+    [HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
+    [HarmonyPostfix]
+    private static void ProcessThrownGun(Gun __instance)
+    {
+        var proj = __instance.GetComponentInParent<Projectile>();
+        var behavs = __instance.GetComponents<GunBehaviour>();
+        if (proj != null && behavs != null && behavs.Length > 0)
+        {
+            var own = proj.Owner;
+            if (own == null)
+            {
+                return;
+            }
+            foreach (var advanced in behavs)
+            {
+                advanced.OnGunThrown(__instance, own, proj);
+                if (own is PlayerController player)
+                {
+                    advanced.OnGunThrownPlayer(__instance, player, proj);
+                }
+                else if (own is AIActor enemy)
+                {
+                    advanced.OnGunThrownEnemy(__instance, enemy, proj);
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Gun), nameof(Gun.BeginFiringBeam))]
+    [HarmonyPostfix]
+    private static void AddBeamTracker(Gun __instance)
+    {
+        var behavs = __instance.GetComponents<GunBehaviour>();
+        if (behavs != null && behavs.Length > 0 && __instance.LastProjectile != null && __instance.LastProjectile.GetComponent<BeamController>() != null)
+        {
+            foreach (var advanced in behavs)
+            {
+                __instance.LastProjectile.gameObject.AddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.Start))]
+    [HarmonyPostfix]
+    private static void PostProcessBeam(BasicBeamController __instance)
+    {
+        var trackers = __instance.GetComponents<BeamBehaviourTracker>();
+        if (trackers != null && trackers.Length > 0)
+        {
+            foreach (var tracker in trackers)
+            {
+                if (tracker.gunBehaviour != null)
+                {
+                    tracker.gunBehaviour.PostProcessBeam(__instance);
+                }
+            }
+        }
+    }
+    #endregion
+
+    #region Harmony Patches - Transpilers
+    [HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
+    [HarmonyILManipulator]
+    private static void ChanceTick(ILContext ctx)
+    {
+		var cursor = new ILCursor(ctx);
+
+		while(cursor.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt(processchancetick)))
+		{
+			cursor.Emit(OpCodes.Ldarg_0);
+			cursor.Emit(OpCodes.Call, triggerprocesschancetick);
+		}
+    }
+
+    [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateAmmoUIForModule))]
+    [HarmonyILManipulator]
+    private static void AmmoCount(ILContext ctx)
+    {
+        var cursor = new ILCursor(ctx);
+
+		if(cursor.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt(equality)))
+		{
+			cursor.Emit(OpCodes.Ldarg, 8);
+            cursor.Emit(OpCodes.Ldarg, 7);
+            cursor.Emit(OpCodes.Ldloca, 0);
+            cursor.Emit(OpCodes.Ldloca, 1);
+            cursor.Emit(OpCodes.Call, modcount);
+        }
+    }
+
+    [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.FrameUpdate))]
+    [HarmonyILManipulator]
+    private static void FrameUpdate(ILContext ctx)
+    {
+        var cursor = new ILCursor(ctx);
+
+		for(int i = 0; i < 7; i++)
+        {
+            if(!cursor.TryGotoNext(MoveType.After, x => x.MatchIsinst(typeof(AIActor))))
+			{
+				break;
+			}
+        }
+
+		if(cursor.TryGotoNext(MoveType.After, x => x.MatchIsinst(typeof(AIActor))))
+		{
+			cursor.Emit(OpCodes.Ldarg_0);
+			cursor.Emit(OpCodes.Ldloc_S, 7);
+			cursor.Emit(OpCodes.Call, triggerpostprocessbeamtick);
+		}
+    }
+
+    private static bool ModModuleAmmoCounts(bool curr, Gun gun, ProjectileModule mod, ref int currentModuleAmmo, ref int maxModuleAmmo)
+    {
+        var behavs = gun.GetComponents<GunBehaviour>();
+
+        if (behavs != null && behavs.Length > 0)
+        {
+            foreach (var advanced in behavs)
+            {
+                advanced.ModifyClipCount(gun, mod, gun.CurrentOwner as PlayerController, ref currentModuleAmmo, ref maxModuleAmmo);
+            }
+        }
+
+		return curr;
+    }
+
+    private static void TriggerPostProcessChanceTick(BeamController beam)
+    {
+        var trackers = beam.GetComponents<BeamBehaviourTracker>();
+
+		if (trackers != null && trackers.Length > 0)
+		{
+			foreach (var tracker in trackers)
+			{
+				if (tracker.gunBehaviour != null)
+					tracker.gunBehaviour.PostProcessBeamChanceTick(beam);
+			}
+		}
+    }
+
+    private static AIActor TriggerPostProcessBeamTick(AIActor curr, BeamController beam, SpeculativeRigidbody hitRigidbody)
+    {
+        if (beam.projectile.baseData.damage != 0)
+        {
+            var trackers = beam.GetComponents<BeamBehaviourTracker>();
+
+			if (trackers != null && trackers.Length > 0)
+			{
+				var deltatime = BraveTime.DeltaTime;
+
+                foreach (var tracker in trackers)
+				{
+					if (tracker.gunBehaviour != null)
+						tracker.gunBehaviour.PostProcessBeamTick(beam, hitRigidbody, deltatime);
+				}
+			}
+        }
+
+		return curr;
+    }
+
+    private static readonly MethodInfo processchancetick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamChanceTick));
+    private static readonly MethodInfo triggerprocesschancetick = AccessTools.Method(typeof(GunBehaviour), nameof(TriggerPostProcessChanceTick));
+    private static readonly MethodInfo modcount = AccessTools.Method(typeof(GunBehaviour), nameof(ModModuleAmmoCounts));
+    private static readonly MethodInfo dopostprocessbeamtick = AccessTools.Method(typeof(PlayerController), nameof(PlayerController.DoPostProcessBeamTick));
+    private static readonly MethodInfo triggerpostprocessbeamtick = AccessTools.Method(typeof(GunBehaviour), nameof(TriggerPostProcessBeamTick));
+	private static readonly MethodInfo equality = AccessTools.Method(typeof(UnityEngine.Object), "op_Equality");
+    #endregion
 }
