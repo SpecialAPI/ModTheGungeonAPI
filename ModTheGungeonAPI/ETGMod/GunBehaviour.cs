@@ -525,6 +525,7 @@ public class GunBehaviour : BraveBehaviour
 	/// <summary>
 	/// The current owner of the gun this is applied to. Unlike gun.CurrentOwner, this is reset after OnDropped instead of before.
 	/// </summary>
+	[NonSerialized]
 	public GameActor LastRegisteredOwner;
 
     #region Harmony Patches - Postfixes
@@ -635,7 +636,7 @@ public class GunBehaviour : BraveBehaviour
 		if(cursor.TryGotoNext(MoveType.After, x => x.MatchIsinst(typeof(AIActor))))
 		{
 			cursor.Emit(OpCodes.Ldarg_0);
-			cursor.Emit(OpCodes.Ldloc_S, 7);
+			cursor.Emit(OpCodes.Ldloc_S, (byte)7);
 			cursor.Emit(OpCodes.Call, triggerpostprocessbeamtick);
 		}
     }
