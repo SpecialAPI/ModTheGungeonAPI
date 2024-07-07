@@ -24,7 +24,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.7.5";
+    public const string VERSION = "1.7.7";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>
@@ -101,6 +101,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     private void Update()
     {
         ETGMod.Assets.Packer.Apply();
+
         if (GameManager.HasInstance && GameManager.Instance.AllPlayers != null)
         {
             foreach (PlayerController play in GameManager.Instance.AllPlayers)
