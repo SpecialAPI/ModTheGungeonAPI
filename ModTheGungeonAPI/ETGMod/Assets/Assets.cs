@@ -421,7 +421,7 @@ public static partial class ETGMod
                 var collName = Path.GetFileName(collection);
 
                 var images = Directory.GetFiles(collection, "*.png");
-                var metadata = Directory.GetFiles(collection, "*.json").Concat(Directory.GetFiles(collection, FULL_DEFINITION_METADATA_EXTENSION));
+                var metadata = Directory.GetFiles(collection, "*.json").Concat(Directory.GetFiles(collection, $"*{FULL_DEFINITION_METADATA_EXTENSION}"));
 
                 foreach (var im in images)
                 {
