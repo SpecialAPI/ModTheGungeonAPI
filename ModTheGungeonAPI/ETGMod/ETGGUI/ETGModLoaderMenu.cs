@@ -29,7 +29,7 @@ public class ETGModLoaderMenu : ETGModMenu
             Children = {
                 new SLabel("BepInEx " + typeof(Paths).Assembly.GetName().Version.ToString() + "") {
                     Foreground = Color.white,
-                    OnUpdateStyle = elem => elem.Size.x = elem.Parent.InnerSize.x
+                    //OnUpdateStyle = elem => elem.Size.x = elem.Parent.InnerSize.x
                 },
 
                 (ModListGroup = new SGroup {
@@ -54,6 +54,15 @@ public class ETGModLoaderMenu : ETGModMenu
         };
     }
 
+    public override void Update()
+    {
+        if (!(ETGModGUI.LoaderEnabled ?? true))
+        {
+            GUI.Enabled = false;
+            GUI.Visible = false;
+        }
+    }
+
     public override void OnOpen()
     {
         RefreshMods();
@@ -61,6 +70,7 @@ public class ETGModLoaderMenu : ETGModMenu
     }
 
     protected Coroutine _C_RefreshMods;
+
     public void RefreshMods()
     {
         _C_RefreshMods?.StopGlobal();

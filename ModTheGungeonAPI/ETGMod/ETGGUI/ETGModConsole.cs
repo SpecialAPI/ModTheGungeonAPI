@@ -967,30 +967,41 @@ public class ETGModConsole : ETGModMenu
 
     public override void Update()
     {
-
+        if (!(ETGModGUI.ConsoleEnabled ?? true))
+        {
+            GUI.Enabled = false;
+            GUI.Visible = false;
+        }
     }
 
     protected virtual SLabel _Log(object text, Texture image)
     {
+        Logger.LogMessage(text);
+
         var slab = new SLabel(text.ToString())
         {
             Icon = image
         };
+
         GUI[0].Children.Add(slab);
         ((SGroup)GUI[0]).ScrollPosition.y = float.MaxValue;
-        Logger.LogMessage(text);
+
         return slab;
     }
 
     protected virtual SButton _LogButton(object text, Action<SButton> onClick, Texture texture)
     {
+        Logger.LogMessage(text);
+
         var butt = new SButton(text.ToString())
         {
             Icon = texture,
             OnClick = onClick
         };
+
         GUI[0].Children.Add(butt);
         ((SGroup)GUI[0]).ScrollPosition.y = float.MaxValue;
+
         return butt;
     }
 
@@ -1001,11 +1012,12 @@ public class ETGModConsole : ETGModMenu
             ETGModGUI.Create();
             ETGModGUI.Start();
         }
+
         var result = Instance?._Log(text, null);
+
         if (debuglog)
-        {
             Debug.Log(text);
-        }
+
         return result;
     }
 
@@ -1016,11 +1028,12 @@ public class ETGModConsole : ETGModMenu
             ETGModGUI.Create();
             ETGModGUI.Start();
         }
+
         var result = Instance?._Log(text, texture);
+
         if (debuglog)
-        {
             Debug.Log(text);
-        }
+
         return result;
     }
 
@@ -1031,7 +1044,9 @@ public class ETGModConsole : ETGModMenu
             ETGModGUI.Create();
             ETGModGUI.Start();
         }
+
         var result = Instance?._LogButton(text, onClick, texture);
+
         return result;
     }
 

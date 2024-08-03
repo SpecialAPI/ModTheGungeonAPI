@@ -26,14 +26,17 @@ public class ETGModDebugLogMenu : ETGModMenu {
         { LogType.Warning,   new Color(1f, 1f, 0.2f, 1f) }
     };
 
-    public override void Start() {
-        GUI = new SGroup {
+    public override void Start()
+    {
+        GUI = new SGroup
+        {
             Visible = false,
             Border = 20f,
             OnUpdateStyle = (SElement elem) => elem.Fill(),
             AutoLayout = (SGroup g) => g.AutoLayoutVertical,
             ScrollDirection = SGroup.EDirection.Vertical,
-            Children = {
+            Children =
+            {
                 new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
                 new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
                 new SLabel("Press the \"E\" key to clear all messages but exceptions") { Foreground = Color.green },
@@ -45,6 +48,14 @@ public class ETGModDebugLogMenu : ETGModMenu {
 
     public override void Update()
     {
+        if (!(ETGModGUI.LogEnabled ?? true))
+        {
+            GUI.Enabled = false;
+            GUI.Visible = false;
+
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.C))
         {
             var listOfText = _AllLoggedText;
@@ -120,33 +131,37 @@ public class ETGModDebugLogMenu : ETGModMenu {
                 GUI.ScrollPosition.y = 0f;
             }
         }
-        if (_LoggedTextAddIndex < _AllLoggedText.Count) {
+
+        if (_LoggedTextAddIndex < _AllLoggedText.Count)
+        {
             _AllLoggedText[_LoggedTextAddIndex].Start();
             ++_LoggedTextAddIndex;
         }
+
         if (Input.GetKeyDown(KeyCode.B))
-        {
             GUI.ScrollPosition.y = float.MaxValue;
-        }
+
         if (Input.GetKeyDown(KeyCode.T))
-        {
             GUI.ScrollPosition.y = 0f;
-        }
     }
 
-    public static void Log(string log) {
+    public static void Log(string log)
+    {
         Logger(log, LogType.Log);
     }
 
-    public static void LogWarning(string log) {
+    public static void LogWarning(string log)
+    {
         Logger(log, LogType.Warning);
     }
 
-    public static void LogError(string log) {
+    public static void LogError(string log)
+    {
         Logger(log, LogType.Error);
     }
 
-    protected static string GetStackTrace() {
+    protected static string GetStackTrace()
+    {
         string stack = System.Environment.StackTrace;
         int index = stack.LastIndexOf("at UnityEngine.Debug.Log", System.StringComparison.InvariantCulture);
         if (index == -1) {
@@ -158,18 +173,26 @@ public class ETGModDebugLogMenu : ETGModMenu {
         return stack.Substring(1 + stack.IndexOf('\n', index));
     }
 
-    public static void Logger(string text, LogType type) { Logger(text, null, type); }
-    public static void Logger(string text, string stackTrace, LogType type) {
-        if (string.IsNullOrEmpty(stackTrace)) {
+    public static void Logger(string text, LogType type) => Logger(text, null, type);
+
+    public static void Logger(string text, string stackTrace, LogType type)
+    {
+        if (!(ETGModGUI.LogEnabled ?? true))
+            return;
+
+        if (string.IsNullOrEmpty(stackTrace))
             stackTrace = GetStackTrace();
-        }
+
         LoggedText entry;
 
-        if (_AllLoggedText.Count != 0) {
+        if (_AllLoggedText.Count != 0)
+        {
             entry = _AllLoggedText[_AllLoggedText.Count - 1];
+
             if (entry.LogMessage == text &&
                 entry.Stacktace == stackTrace &&
-                entry.LogType == type) {
+                entry.LogType == type)
+            {
                 entry.LogCount++;
                 return;
             }
@@ -179,8 +202,8 @@ public class ETGModDebugLogMenu : ETGModMenu {
         _AllLoggedText.Add(entry);
     }
 
-    protected class LoggedText {
-
+    protected class LoggedText
+    {
         public string LogMessage;
         public string Stacktace;
         public LogType LogType;
@@ -188,23 +211,26 @@ public class ETGModDebugLogMenu : ETGModMenu {
         public bool IsStacktraceShown;
 
         protected int _LogCount = 1;
-        public int LogCount {
-            get {
-                return _LogCount;
-            }
-            set {
+        public int LogCount
+        {
+            get => _LogCount;
+
+            set
+            {
                 _LogCount = value;
-                if (GUIMessage != null) {
+
+                if (GUIMessage != null)
                     GUIMessage.Text = LogMessageFormatted;
-                }
             }
         }
 
-        public string LogMessageFormatted {
-            get {
-                if (LogCount == 1) {
+        public string LogMessageFormatted
+        {
+            get
+            {
+                if (LogCount == 1)
                     return LogMessage;
-                }
+
                 return "(" + LogCount + ") " + LogMessage;
             }
         }
@@ -212,34 +238,40 @@ public class ETGModDebugLogMenu : ETGModMenu {
         public SButton GUIMessage;
         public SLabel GUIStacktrace;
 
-        public LoggedText(string logMessage, string stackTrace, LogType type) {
+        public LoggedText(string logMessage, string stackTrace, LogType type)
+        {
             LogMessage = logMessage;
             Stacktace = stackTrace;
             LogType = type;
         }
 
-        public void Start() {
-            if (Instance?.GUI == null) {
+        public void Start()
+        {
+            if (Instance?.GUI == null)
                 return;
-            }
 
-            Color color = Colors[LogType];
+            var color = Colors[LogType];
 
-            GUIMessage = new SButton(LogMessageFormatted) {
+            GUIMessage = new SButton(LogMessageFormatted)
+            {
                 Parent = Instance.GUI,
                 Border = Vector2.zero,
                 Background = new Color(0, 0, 0, 0),
                 Foreground = color,
-                OnClick = delegate (SButton button) {
+                OnClick = delegate (SButton button)
+                {
                     IsStacktraceShown = !IsStacktraceShown;
                     Instance.GUI.UpdateStyle();
                 },
                 With = { new SFadeInAnimation() }
             };
-            GUIStacktrace = new SLabel(Stacktace) {
+
+            GUIStacktrace = new SLabel(Stacktace)
+            {
                 Parent = Instance.GUI,
                 Foreground = color,
-                OnUpdateStyle = delegate (SElement elem) {
+                OnUpdateStyle = delegate (SElement elem)
+                {
                     elem.Size.y = IsStacktraceShown ? elem.Size.y : 0f;
                     elem.Visible = IsStacktraceShown;
                 }

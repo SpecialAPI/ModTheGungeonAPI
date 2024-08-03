@@ -7,9 +7,14 @@ using System.Collections.Generic;
 using ETGGUI;
 using System;
 
-public class ETGModGUI : MonoBehaviour {
+public class ETGModGUI : MonoBehaviour
+{
+    public static bool? ConsoleEnabled = null;
+    public static bool? LogEnabled = null;
+    public static bool? LoaderEnabled = null;
 
-    public enum MenuOpened {
+    public enum MenuOpened
+    {
         None,
         ModLoader,
         Logger,
@@ -17,17 +22,21 @@ public class ETGModGUI : MonoBehaviour {
     };
 
     private static MenuOpened _CurrentMenu = MenuOpened.None;
-    public static MenuOpened CurrentMenu {
-        get {
-            return _CurrentMenu;
-        }
-        set {
-            bool change = _CurrentMenu != value;
-            if (change) {
+    public static MenuOpened CurrentMenu
+    {
+        get => _CurrentMenu;
+
+        set
+        {
+            var change = _CurrentMenu != value;
+
+            if (change)
                 CurrentMenuInstance.OnClose();
-            }
+
             _CurrentMenu = value;
-            if (change) {
+
+            if (change)
+            {
                 CurrentMenuInstance.OnOpen();
                 UpdateTimeScale();
                 UpdatePlayerState();
@@ -36,7 +45,7 @@ public class ETGModGUI : MonoBehaviour {
     }
 
     public static GameObject MenuObject;
-    public readonly static ETGModNullMenu NullMenu = new ETGModNullMenu();
+    public readonly static ETGModNullMenu NullMenu = new();
     public static ETGModConsole ConsoleMenu;
     public static ETGModDebugLogMenu LoggerMenu;
     public static ETGModLoaderMenu LoaderMenu;
@@ -45,90 +54,83 @@ public class ETGModGUI : MonoBehaviour {
 
     public static bool UseDamageIndicators = false;
 
-    public static IETGModMenu CurrentMenuInstance {
-        get {
-            switch (CurrentMenu) {
+    public static IETGModMenu CurrentMenuInstance => CurrentMenu switch
+    {
+        MenuOpened.Console => ConsoleMenu,
+        MenuOpened.Logger => LoggerMenu,
+        MenuOpened.ModLoader => LoaderMenu,
 
-                case MenuOpened.Console:
-                    return ConsoleMenu;
-                case MenuOpened.Logger:
-                    return LoggerMenu;
-                case MenuOpened.ModLoader:
-                    return LoaderMenu;
-            }
-            return NullMenu;
-        }
-    }
+        _ => NullMenu,
+    };
 
     /// <summary>
     /// Creates a new object with this script on it.
     /// </summary>
-    public static void Create() {
-        if (MenuObject != null) {
+    public static void Create()
+    {
+        if (MenuObject != null)
             return;
-        }
-        MenuObject = new GameObject();
-        MenuObject.name = "ModLoaderMenu";
+
+        MenuObject = new()
+        {
+            name = "ModLoaderMenu"
+        };
+
         MenuObject.AddComponent<ETGModGUI>();
         DontDestroyOnLoad(MenuObject);
     }
 
-    public void Awake() {
+    public void Awake()
+    {
         LoggerMenu = new ETGModDebugLogMenu();
         ConsoleMenu = new ETGModConsole();
         LoaderMenu = new ETGModLoaderMenu();
     }
 
-    public static void Start() {
-        //TestTexture = Resources.Load<Texture2D>("test/texture");
-
+    public static void Start()
+    {
         LoaderMenu.Start();
         LoggerMenu.Start();
         ConsoleMenu.Start();
-       // InspectorMenu.Start();
     }
 
-    public void Update() {
-
+    public void Update()
+    {
         if (Input.GetKeyDown(KeyCode.F1))
         {
             if (CurrentMenu == MenuOpened.ModLoader)
-            {
                 CurrentMenu = MenuOpened.None;
-            }
-            else
-            {
+
+            else if (LoaderEnabled ?? true)
                 CurrentMenu = MenuOpened.ModLoader;
-            }
 
             UpdateTimeScale();
             UpdatePlayerState();
         }
 
-        if (Input.GetKeyDown(KeyCode.F2) || Input.GetKeyDown(KeyCode.Slash) || Input.GetKeyDown(KeyCode.BackQuote)) {
-            if (CurrentMenu == MenuOpened.Console) {
+        if (Input.GetKeyDown(KeyCode.F2) || Input.GetKeyDown(KeyCode.Slash) || Input.GetKeyDown(KeyCode.BackQuote))
+        {
+            if (CurrentMenu == MenuOpened.Console)
                 CurrentMenu = MenuOpened.None;
-            } else {
+
+            else if (ConsoleEnabled ?? true)
                 CurrentMenu = MenuOpened.Console;
-            }
 
             UpdateTimeScale();
             UpdatePlayerState();
         }
 
-        if (Input.GetKeyDown(KeyCode.F3)) {
-            if (CurrentMenu == MenuOpened.Logger) {
+        if (Input.GetKeyDown(KeyCode.F3))
+        {
+            if (CurrentMenu == MenuOpened.Logger)
                 CurrentMenu = MenuOpened.None;
-            } else {
+
+            else if (LogEnabled ?? true)
                 CurrentMenu = MenuOpened.Logger;
-            }
         }
 
-
-        if (CurrentMenu != MenuOpened.None && Input.GetKeyDown(KeyCode.Escape)) {
+        if (CurrentMenu != MenuOpened.None && Input.GetKeyDown(KeyCode.Escape))
             CurrentMenu = MenuOpened.None;
-        }
-
 
         CurrentMenuInstance.Update();
     }

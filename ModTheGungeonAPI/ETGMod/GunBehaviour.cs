@@ -20,37 +20,44 @@ public class GunBehaviour : BraveBehaviour
     private void Awake()
     {
         gun = GetComponent<Gun>();
-        if (gun != null)
-        {
-            OnCreation(gun);
-            gun.OnInitializedWithOwner += InternalOnInitializedWithOwner;
-            gun.OnInitializedWithOwner += OnInitializedWithOwner;
-            gun.PostProcessProjectile += PostProcessProjectile;
-            gun.PostProcessVolley += PostProcessVolley;
-            gun.OnDropped += OnDropped;
-            gun.OnDropped += InternalOnDropped;
-            gun.OnAutoReload += OnAutoReload;
-            gun.OnReloadPressed += OnReloadPressed;
-            gun.OnFinishAttack += OnFinishAttack;
-            gun.OnPostFired += OnPostFired;
-            gun.OnAmmoChanged += OnAmmoChanged;
-            gun.OnBurstContinued += OnBurstContinued;
-            if(IsOverriden(nameof(OnPreFireProjectileModifier)))
-                gun.OnPreFireProjectileModifier += OnPreFireProjectileModifier;
-            if (IsOverriden(nameof(OnReflectedBulletDamageModifier)))
-                gun.OnReflectedBulletDamageModifier += OnReflectedBulletDamageModifier;
-            if (IsOverriden(nameof(OnReflectedBulletScaleModifier)))
-                gun.OnReflectedBulletScaleModifier += OnReflectedBulletScaleModifier;
-            if (IsOverriden(nameof(ModifyActiveCooldownDamage)))
-                gun.ModifyActiveCooldownDamage += ModifyActiveCooldownDamage;
-            if (gun.CurrentOwner != null)
-            {
-                LastRegisteredOwner = gun.CurrentOwner;
 
-                OnInitializedWithOwner(gun.CurrentOwner);
-                InternalOnInitializedWithOwner(gun.CurrentOwner);
-            }
-        }
+        if (gun == null)
+            return;
+
+        OnCreation(gun);
+
+        gun.OnInitializedWithOwner += OnInitializedWithOwner;
+        gun.OnInitializedWithOwner += InternalOnInitializedWithOwner;
+        gun.PostProcessProjectile += PostProcessProjectile;
+        gun.PostProcessVolley += PostProcessVolley;
+        gun.OnDropped += OnDropped;
+        gun.OnDropped += InternalOnDropped;
+        gun.OnAutoReload += OnAutoReload;
+        gun.OnReloadPressed += OnReloadPressed;
+        gun.OnFinishAttack += OnFinishAttack;
+        gun.OnPostFired += OnPostFired;
+        gun.OnAmmoChanged += OnAmmoChanged;
+        gun.OnBurstContinued += OnBurstContinued;
+
+        if (IsOverriden(nameof(OnPreFireProjectileModifier)))
+            gun.OnPreFireProjectileModifier += OnPreFireProjectileModifier;
+
+        if (IsOverriden(nameof(OnReflectedBulletDamageModifier)))
+            gun.OnReflectedBulletDamageModifier += OnReflectedBulletDamageModifier;
+
+        if (IsOverriden(nameof(OnReflectedBulletScaleModifier)))
+            gun.OnReflectedBulletScaleModifier += OnReflectedBulletScaleModifier;
+
+        if (IsOverriden(nameof(ModifyActiveCooldownDamage)))
+            gun.ModifyActiveCooldownDamage += ModifyActiveCooldownDamage;
+
+        if (gun.CurrentOwner == null)
+            return;
+
+        LastRegisteredOwner = gun.CurrentOwner;
+
+        OnInitializedWithOwner(gun.CurrentOwner);
+        InternalOnInitializedWithOwner(gun.CurrentOwner);
     }
 
     /// <summary>
@@ -60,10 +67,10 @@ public class GunBehaviour : BraveBehaviour
     {
         base.OnDestroy();
 
-        if(gun != null)
+        if (gun != null)
         {
-            gun.OnInitializedWithOwner -= InternalOnInitializedWithOwner;
             gun.OnInitializedWithOwner -= OnInitializedWithOwner;
+            gun.OnInitializedWithOwner -= InternalOnInitializedWithOwner;
             gun.PostProcessProjectile -= PostProcessProjectile;
             gun.PostProcessVolley -= PostProcessVolley;
             gun.OnDropped -= OnDropped;
@@ -106,21 +113,18 @@ public class GunBehaviour : BraveBehaviour
     private void InternalOnInitializedWithOwner(GameActor owner)
     {
         if (owner == null)
-        {
             return;
-        }
 
         if (owner is PlayerController player)
-        {
             OnPlayerPickup(player);
-        }
+
         else if (owner is AIActor enemy)
-        {
             OnEnemyPickup(enemy);
-        }
+
+        everPickedUp = true;
     }
 
-    private void InternalOnDropped()
+    internal void InternalOnDropped()
     {
         if (LastRegisteredOwner != null)
         {
@@ -131,7 +135,8 @@ public class GunBehaviour : BraveBehaviour
                 OnDroppedByPlayer(player);
                 DisableEffectPlayer(player);
             }
-            else if(LastRegisteredOwner is AIActor enemy)
+
+            else if (LastRegisteredOwner is AIActor enemy)
                 DisableEffectEnemy(enemy);
         }
 
@@ -333,24 +338,23 @@ public class GunBehaviour : BraveBehaviour
     public void BraveOnLevelWasLoaded()
     {
         OnLevelLoadPreGeneration();
-        if (gun?.CurrentOwner != null && gun.CurrentOwner is PlayerController player)
-        {
-            OnPlayerLevelLoadPreGeneration(player);
-        }
+
+        if (PlayerOwner)
+            OnPlayerLevelLoadPreGeneration(PlayerOwner);
+
         StartCoroutine(DelayedLoad());
     }
 
     private IEnumerator DelayedLoad()
     {
         while (Dungeon.IsGenerating)
-        {
             yield return null;
-        }
+
         OnLevelLoadPostGeneration();
-        if (gun?.CurrentOwner != null && gun.CurrentOwner is PlayerController player)
-        {
-            OnPlayerLevelLoadPostGeneration(player);
-        }
+
+        if (PlayerOwner)
+            OnPlayerLevelLoadPostGeneration(PlayerOwner);
+
         yield break;
     }
 
@@ -529,6 +533,86 @@ public class GunBehaviour : BraveBehaviour
     }
 
     /// <summary>
+    /// Runs when this gun finishes reloading.
+    /// </summary>
+    /// <param name="owner">The owner of the gun.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnReloadEnded(GameActor owner, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs when a player finishes reloading this gun.
+    /// </summary>
+    /// <param name="owner">The player owner.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnReloadEndedPlayer(PlayerController owner, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs when a enemy finishes reloading this gun.
+    /// </summary>
+    /// <param name="owner">The enemy owner.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnReloadEndedEnemy(AIActor owner, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs when this gun automatically reloads from being stored in the inventory.
+    /// </summary>
+    /// <param name="owner">The owner of the gun.</param>
+    /// <param name="inventory">The owner's inventory.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnInventoryReload(GameActor owner, GunInventory inventory, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs when this gun automatically reloads from being stored in a player's inventory.
+    /// </summary>
+    /// <param name="owner">The player owner.</param>
+    /// <param name="inventory">The owner's inventory.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnInventoryReloadPlayer(PlayerController owner, GunInventory inventory, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs when this gun automatically reloads from being stored in an enemy's inventory.
+    /// </summary>
+    /// <param name="owner">The enemy owner.</param>
+    /// <param name="inventory">The owner's inventory.</param>
+    /// <param name="gun">This gun.</param>
+    public virtual void OnInventoryReloadEnemy(AIActor owner, GunInventory inventory, Gun gun)
+    {
+    }
+
+    /// <summary>
+    /// Runs to check whether or not this gun can collect an ammo box pickup.
+    /// </summary>
+    /// <param name="owner">The player owner.</param>
+    /// <param name="gun">This gun.</param>
+    /// <param name="ammo">The ammo box that is about to be collected.</param>
+    /// <param name="canCollect">Whether the ammo box can normally be collected.</param>
+    /// <param name="displayAmmoFullMessage">Whether the ammo box will display the "FULL" message above the player. Only matters if the box can't be collected.</param>
+    /// <returns></returns>
+    public virtual void CanCollectAmmoPickup(PlayerController owner, Gun gun, AmmoPickup ammo, ref bool canCollect, ref bool displayAmmoFullMessage)
+    {
+    }
+
+    /// <summary>
+    /// Runs when an ammo box is successfully collected by this gun. 
+    /// </summary>
+    /// <param name="owner">The player owner.</param>
+    /// <param name="gun">This gun.</param>
+    /// <param name="ammo">The collected ammo box.</param>
+    public virtual void OnAmmoCollected(PlayerController owner, Gun gun, AmmoPickup ammo)
+    {
+    }
+
+    /// <summary>
     /// Runs every frame while the gun is owned, even when not selected.
     /// </summary>
     /// <param name="owner">The owner of this gun.</param>
@@ -618,7 +702,7 @@ public class GunBehaviour : BraveBehaviour
     /// <summary>
     /// True if the gun was ever picked up, false otherwise.
     /// </summary>
-    public bool EverPickedUp => gun != null ? gun.HasBeenPickedUp : false;
+    public bool EverPickedUp => everPickedUp;
 
     /// <summary>
     /// The current owner of the gun this is applied to. Unlike gun.CurrentOwner, this is reset after OnDropped instead of before.
@@ -626,345 +710,9 @@ public class GunBehaviour : BraveBehaviour
     [NonSerialized]
     public GameActor LastRegisteredOwner;
 
-    #region Harmony Patches - Postfixes
-    [HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
-    [HarmonyPostfix]
-    private static void OnGunThrown_Postfix(Gun __instance)
-    {
-        var proj = __instance.GetComponentInParent<Projectile>();
-        var behavs = __instance.GetComponents<GunBehaviour>();
-
-        if (proj == null || behavs == null || behavs.Length == 0)
-            return;
-
-        var own = proj.Owner;
-
-        if (own == null)
-            return;
-
-        foreach (var advanced in behavs)
-        {
-            advanced.OnGunThrown(__instance, own, proj);
-
-            if (own is PlayerController player)
-                advanced.OnGunThrownPlayer(__instance, player, proj);
-
-            else if (own is AIActor enemy)
-                advanced.OnGunThrownEnemy(__instance, enemy, proj);
-        }
-    }
-
-    [HarmonyPatch(typeof(Gun), nameof(Gun.BeginFiringBeam))]
-    [HarmonyPostfix]
-    private static void AddBeamTracker_Postfix(Gun __instance)
-    {
-        var behavs = __instance.GetComponents<GunBehaviour>();
-
-        if (behavs == null || behavs.Length == 0 || __instance.LastProjectile == null || __instance.LastProjectile.GetComponent<BeamController>() == null)
-            return;
-
-
-        foreach (var advanced in behavs)
-        {
-            if (!advanced)
-                continue;
-
-            __instance.LastProjectile.gameObject.AddComponent<BeamBehaviourTracker>().gunBehaviour = advanced;
-        }
-    }
-
-    [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.Start))]
-    [HarmonyPostfix]
-    private static void PostProcessBeam_Postfix(BasicBeamController __instance)
-    {
-        var trackers = __instance.GetComponents<BeamBehaviourTracker>();
-
-        if (trackers == null || trackers.Length == 0)
-            return;
-
-        foreach (var tracker in trackers)
-        {
-            if (tracker.gunBehaviour != null)
-                tracker.gunBehaviour.PostProcessBeam(__instance);
-        }
-    }
-
-    [HarmonyPatch(typeof(Gun), nameof(Gun.ThrowGun))]
-    [HarmonyPostfix]
-    private static void OnDroppedOnThrow_Postfix(Gun __instance)
-    {
-        var behavs = __instance.GetComponents<GunBehaviour>();
-
-        if (behavs == null || behavs.Length == 0)
-            return;
-
-        foreach (var behav in behavs)
-        {
-            if (!behav)
-                continue;
-
-            behav.OnDropped();
-            behav.InternalOnDropped();
-        }
-    }
-
-    [HarmonyPatch(typeof(GunInventory), nameof(GunInventory.FrameUpdate))]
-    [HarmonyPostfix]
-    private static void OwnedUpdate_Postfix(GunInventory __instance)
-    {
-        if(__instance.AllGuns == null || __instance.AllGuns.Count == 0)
-            return;
-
-        var own = __instance.Owner;
-
-        foreach(var g in __instance.AllGuns)
-        {
-            if(g == null)
-                continue;
-
-            var behavs = g.GetComponents<GunBehaviour>();
-
-            if(behavs == null || behavs.Length == 0)
-                continue;
-
-            foreach(var behav in behavs)
-            {
-                if(!behav)
-                    continue;
-
-                behav.OwnedUpdate(own, __instance);
-
-                if (own is PlayerController player)
-                    behav.OwnedUpdatePlayer(player, __instance);
-
-                if(own is AIActor enemy)
-                    behav.OwnedUpdateEnemy(enemy, __instance);
-            }
-        }
-    }
-    #endregion
-
-    #region Harmony Patches - Transpilers
-    [HarmonyPatch(typeof(BeamController), nameof(BeamController.HandleChanceTick))]
-    [HarmonyILManipulator]
-    private static void PostProcessBeamChanceTick_Transpiler(ILContext ctx)
-    {
-        var cursor = new ILCursor(ctx);
-
-        while(cursor.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<PlayerController>(nameof(PlayerController.DoPostProcessBeamChanceTick))))
-        {
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Call, ppbct_mc);
-        }
-    }
-
-    private static void PostProcessBeamChanceTick_MethodCall(BeamController beam)
-    {
-        var trackers = beam.GetComponents<BeamBehaviourTracker>();
-
-        if (trackers == null || trackers.Length == 0)
-            return;
-
-        foreach (var tracker in trackers)
-        {
-            if (tracker.gunBehaviour != null)
-                tracker.gunBehaviour.PostProcessBeamChanceTick(beam);
-        }
-    }
-
-    [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.FrameUpdate))]
-    [HarmonyILManipulator]
-    private static void PostProcessBeamTick_Transpiler(ILContext ctx)
-    {
-        var cursor = new ILCursor(ctx);
-
-        for (var i = 0; i < 8; i++)
-        {
-            if (!cursor.TryGotoNext(MoveType.After, x => x.MatchIsinst<AIActor>()))
-                return;
-        }
-
-        cursor.Emit(OpCodes.Ldarg_0);
-        cursor.Emit(OpCodes.Ldloc_S, (byte)7);
-
-        cursor.Emit(OpCodes.Call, ppbt_mc);
-    }
-
-    private static AIActor PostProcessBeamTick_MethodCall(AIActor curr, BeamController beam, SpeculativeRigidbody hitRigidbody)
-    {
-        if (beam.projectile.baseData.damage == 0)
-            return curr;
-
-        var trackers = beam.GetComponents<BeamBehaviourTracker>();
-
-        if (trackers == null || trackers.Length == 0)
-            return curr;
-
-        var deltatime = BraveTime.DeltaTime;
-
-        foreach (var tracker in trackers)
-        {
-            if (tracker.gunBehaviour != null)
-                tracker.gunBehaviour.PostProcessBeamTick(beam, hitRigidbody, deltatime);
-        }
-
-        return curr;
-    }
-
-    [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateAmmoUIForModule))]
-    [HarmonyILManipulator]
-    private static void ModifyClipCount_Transpiler(ILContext ctx)
-    {
-        var cursor = new ILCursor(ctx);
-
-        if(cursor.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<UnityEngine.Object>("op_Equality")))
-        {
-            cursor.Emit(OpCodes.Ldarg, 8);
-            cursor.Emit(OpCodes.Ldarg, 7);
-            cursor.Emit(OpCodes.Ldloca, 0);
-            cursor.Emit(OpCodes.Ldloca, 1);
-            cursor.Emit(OpCodes.Call, mcc_mc);
-        }
-    }
-
-    private static bool ModifyClipCount_MethodCall(bool curr, Gun gun, ProjectileModule mod, ref int currentModuleAmmo, ref int maxModuleAmmo)
-    {
-        var behavs = gun.GetComponents<GunBehaviour>();
-
-        if (behavs == null || behavs.Length == 0)
-            return curr;
-
-        foreach (var advanced in behavs)
-        {
-            if (!advanced)
-                continue;
-
-            advanced.ModifyClipCount(gun, mod, gun.CurrentOwner as PlayerController, ref currentModuleAmmo, ref maxModuleAmmo);
-        }
-
-        return curr;
-    }
-
-    [HarmonyPatch(typeof(GunInventory), nameof(GunInventory.ChangeGun))]
-    [HarmonyILManipulator]
-    private static void OnChangedToAndAwayFrom_Transpiler(ILContext ctx)
-    {
-        var crs = new ILCursor(ctx);
-
-        if (!crs.TryGotoNext(MoveType.After, x => x.MatchLdfld<GunInventory>(nameof(GunInventory.OnGunChanged))))
-            return;
-
-        crs.Emit(OpCodes.Ldarg_0);
-        crs.Emit(OpCodes.Ldloc_0);
-        crs.Emit(OpCodes.Ldloc_1);
-        crs.Emit(OpCodes.Ldloc_2);
-
-        crs.Emit(OpCodes.Call, octaaf_mc);
-    }
-
-    private static GunInventory.OnGunChangedEvent OnChangedToAndAwayFrom_MethodCall(GunInventory.OnGunChangedEvent curr, GunInventory inv, Gun previous, Gun previousSecondary, bool isNewGun)
-    {
-        var owner = inv.Owner;
-
-        var current = inv.CurrentGun;
-        var currentSecondary = inv.CurrentSecondaryGun;
-
-        if(previous != current)
-        {
-            OnChangedToAndAwayFrom_CallSwitchedToAndAwayFrom(owner, inv, previous, current, isNewGun, true);
-            OnChangedToAndAwayFrom_CallSwitchedToAndAwayFrom(owner, inv, current, previous, isNewGun, false);
-        }
-
-        if(previousSecondary != currentSecondary)
-        {
-            OnChangedToAndAwayFrom_CallSwitchedToAndAwayFrom(owner, inv, previousSecondary, currentSecondary, isNewGun, true);
-            OnChangedToAndAwayFrom_CallSwitchedToAndAwayFrom(owner, inv, currentSecondary, previousSecondary, isNewGun, false);
-        }
-
-        return curr;
-    }
-    
-    private static void OnChangedToAndAwayFrom_CallSwitchedToAndAwayFrom(GameActor owner, GunInventory inventory, Gun gun, Gun other, bool isNewGun, bool switchedAwayFrom)
-    {
-        if (gun == null)
-            return;
-
-        var behavs = gun.GetComponents<GunBehaviour>();
-
-        if (behavs == null || behavs.Length == 0)
-            return;
-
-        foreach(var behav in behavs)
-        {
-            if (!behav)
-                continue;
-
-            if (switchedAwayFrom)
-                behav.OnSwitchedAwayFrom(owner, inventory, other, isNewGun);
-
-            else
-                behav.OnSwitchedTo(owner, inventory, other, isNewGun);
-
-            if(owner is PlayerController player)
-            {
-                if (switchedAwayFrom)
-                    behav.OnSwitchedAwayFromPlayer(player, inventory, other, isNewGun);
-
-                else
-                    behav.OnSwitchedToPlayer(player, inventory, other, isNewGun);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(Gun), nameof(Gun.Reload))]
-    [HarmonyILManipulator]
-    private static void OnReload_Transpiler(ILContext ctx)
-    {
-        var crs = new ILCursor(ctx);
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (!crs.TryGotoNext(MoveType.After, x => x.MatchIsinst<PlayerController>()))
-                return;
-        }
-
-        crs.Emit(OpCodes.Ldarg_0);
-        crs.Emit(OpCodes.Call, or_mc);
-    }
-
-    private static PlayerController OnReload_MethodCall(PlayerController curr, Gun gun)
-    {
-        if (gun == null)
-            return curr;
-
-        var behavs = gun.GetComponents<GunBehaviour>();
-
-        if (behavs == null || behavs.Length == 0)
-            return curr;
-
-        var owner = gun.CurrentOwner;
-
-        foreach(var behav in behavs)
-        {
-            if (behav == null)
-                continue;
-
-            behav.OnReloaded(owner, gun);
-
-            if(owner is PlayerController player)
-                behav.OnReloadedPlayer(player, gun);
-
-            else if(owner is AIActor enemy)
-                behav.OnReloadedEnemy(enemy, gun);
-        }
-
-        return curr;
-    }
-
-    private static readonly MethodInfo ppbct_mc = AccessTools.Method(typeof(GunBehaviour), nameof(PostProcessBeamChanceTick_MethodCall));
-    private static readonly MethodInfo ppbt_mc = AccessTools.Method(typeof(GunBehaviour), nameof(PostProcessBeamTick_MethodCall));
-    private static readonly MethodInfo mcc_mc = AccessTools.Method(typeof(GunBehaviour), nameof(ModifyClipCount_MethodCall));
-    private static readonly MethodInfo octaaf_mc = AccessTools.Method(typeof(GunBehaviour), nameof(OnChangedToAndAwayFrom_MethodCall));
-    private static readonly MethodInfo or_mc = AccessTools.Method(typeof(GunBehaviour), nameof(OnReload_MethodCall));
-    #endregion
+    [NonSerialized]
+    internal bool cache_ammoCollectedSuccessfully = false;
+
+    [SerializeField]
+    private bool everPickedUp;
 }

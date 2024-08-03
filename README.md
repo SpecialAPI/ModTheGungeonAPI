@@ -6,6 +6,7 @@ Mod the Gungeon API includes:
  * Most of classic Mod the Gungeon's API features (adding items to loot tables, changing strings, replacing and adding textures, etc)
  * A debug/cheat console (F2, ~, /)
  * A debug log that records all Unity logging (F3)
+   * Note: this log is disabled by default for performance reasons. It can be enabled in the config file (`etgmodding.etg.mtgapi.cfg`)
  * A mods menu that shows all enabled plugins (F1)
 
 # Useful Links

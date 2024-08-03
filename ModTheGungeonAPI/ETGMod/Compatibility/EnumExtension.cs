@@ -35,33 +35,27 @@ public static partial class ETGModCompatibility
 	public static object ExtendEnum(string guid, string name, Type t)
 	{
         if (!t.IsEnum)
-        {
 			return 0;
-        }
+
 		ETGModMainBehaviour.EnsureHarmonyInitialized();
-		Dictionary<GuidInfo, int> valuesForEnum;
-		if (!extendedEnums.ContainsKey(t))
-		{
-			valuesForEnum = new();
-			extendedEnums.Add(t, valuesForEnum);
-		}
-		else
-		{
-			valuesForEnum = extendedEnums[t];
-		}
+
+		if (!extendedEnums.TryGetValue(t, out var valuesForEnum))
+			extendedEnums[t] = valuesForEnum = new();
+
 		name = name.RemoveUnacceptableCharactersForEnum().Replace(".", "");
 		guid = guid.RemoveUnacceptableCharactersForEnum();
-		GuidInfo ginfo = new(guid, name);
+
+		var ginfo = new GuidInfo(guid, name);
 		var values = valuesForEnum.Where(x => x.Key.guid == ginfo.guid && x.Key.info == ginfo.info);
+
 		KeyValuePair<GuidInfo, int>? value = null;
+
 		if (values.Count() > 0)
-		{
 			value = values.FirstOrDefault();
-		}
+
 		if (value.HasValue)
-		{
 			return value.GetValueOrDefault().Value;
-		}
+
 		else
 		{
 			var max = 0;
@@ -69,19 +63,18 @@ public static partial class ETGModCompatibility
 			{
 				max = Enum.GetValues(t).Cast<int>().Max();
 			}
-			catch
-			{
-			}
+			catch { }
+
 			var val = 0;
+
 			if (t.IsDefined(typeof(FlagsAttribute), false))
-			{
 				val = max == 0 ? 1 : max * 2;
-			}
+
 			else
-			{
 				val = max + 1;
-			}
+
 			valuesForEnum.Add(ginfo, val);
+
 			return val;
 		}
 	}

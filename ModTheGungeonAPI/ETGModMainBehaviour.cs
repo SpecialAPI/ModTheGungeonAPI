@@ -24,7 +24,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.7.7";
+    public const string VERSION = "1.8.0";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>
@@ -46,24 +46,33 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     {
         Instance = this;
         EnsureHarmonyInitialized();
+
         if (GameManager.HasInstance && GameUIRoot.Instance != null)
         {
             HarmonyPatches.AddLevelLoadListener(GameManager.Instance);
             HarmonyPatches.InvokeOnAwakeBehaviours(GameManager.Instance);
             HarmonyPatches.InvokeOnStartBehaviours(GameManager.Instance);
         }
+
+        ETGModGUI.ConsoleEnabled = Config.Bind("ModTheGungeonUI", "Console", true, "Whether or not the Mod the Gungeon console is enabled or not.").Value;
+        ETGModGUI.LogEnabled = Config.Bind("ModTheGungeonUI", "DebugLog", false, "Whether or not the Mod the Gungeon debug log is enabled or not.").Value;
+        ETGModGUI.LoaderEnabled = Config.Bind("ModTheGungeonUI", "ModsMenu", true, "Whether or not the Mod the Gungeon mods menu is enabled or not.").Value;
+
         Gungeon.Game.Initialize();
+
         Application.logMessageReceived += ETGModDebugLogMenu.Logger;
         SGUIIMBackend.GetFont = (SGUIIMBackend backend) => FontConverter.GetFontFromdfFont((dfFont)dfControl.ActiveInstances[0].GUIManager.DefaultFont, 2);
+
         SGUIRoot.Setup();
         ETGModGUI.Create();
         ETGModGUI.Start();
+
         ETGMod.Assets.SetupSpritesFromFolder(ETGMod.SpriteReplacementDirectory);
+
         var dirs = Directory.GetDirectories(Paths.PluginPath, "sprites", SearchOption.AllDirectories);
+
         foreach(var dir in dirs)
-        {
             ETGMod.Assets.SetupSpritesFromFolder(dir);
-        }
     }
 
     /// <summary>
