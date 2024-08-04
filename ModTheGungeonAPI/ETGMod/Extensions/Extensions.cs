@@ -202,9 +202,13 @@ public static partial class ETGMod
     public static void AddRange(this IDictionary to, IDictionary from)
     {
         foreach (DictionaryEntry entry in from)
-        {
             to.Add(entry.Key, entry.Value);
-        }
+    }
+
+    public static void SetRange(this IDictionary to, IDictionary from)
+    {
+        foreach (DictionaryEntry entry in from)
+            to[entry.Key] = entry.Value;
     }
 
     public static void ForEach<T>(this BindingList<T> list, Action<T> a)

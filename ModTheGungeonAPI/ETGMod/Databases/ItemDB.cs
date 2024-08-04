@@ -255,6 +255,8 @@ public class ItemDB
         gun.SetBaseMaxAmmo(300);
         gun.reloadTime = 0.625f;
 
+        gun.barrelOffset.transform.localScale = Vector3.one;
+
         Gungeon.Game.Items.Add($"outdated_gun_mods:{gunName.ToID()}", gun);
 
         return gun;

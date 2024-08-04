@@ -122,7 +122,7 @@ public static partial class ETGMod
                         if (!unprocessedReplacements.TryGetValue(cname, out var dfs) || dfs == null)
                             unprocessedReplacements[cname] = dfs = new();
 
-                        dfs.AddRange(kvp.Value);
+                        dfs.SetRange(kvp.Value);
 
                         continue;
                     }
@@ -147,7 +147,7 @@ public static partial class ETGMod
                         if (!unprocessedJsons.TryGetValue(cname, out var dfs) || dfs == null)
                             unprocessedJsons[cname] = dfs = new();
 
-                        dfs.AddRange(kvp.Value);
+                        dfs.SetRange(kvp.Value);
 
                         continue;
                     }
@@ -571,15 +571,18 @@ public static partial class ETGMod
         /// <param name="pack">Does nothing, only exists for backwards compatibility.</param>
         public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true)
         {
+            var segment = Packer.Pack(replacement);
+
+            if (segment == null)
+                return;
+
             frame.flipped = tk2dSpriteDefinition.FlipMode.None;
             frame.materialInst = new Material(frame.material);
             frame.texelSize = replacement.texelSize;
             frame.extractRegion = true;
-            RuntimeAtlasSegment segment = Packer.Pack(replacement);
             frame.materialInst.mainTexture = segment.texture;
             frame.uvs = segment.uvs;
         }
-
     }
 
     /// <summary>

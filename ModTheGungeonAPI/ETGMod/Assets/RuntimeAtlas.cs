@@ -37,6 +37,18 @@ public class RuntimeAtlasPacker
     {
         RuntimeAtlasSegment segment;
 
+        var paddingAddition = Padding * 2;
+
+        if((tex.width + paddingAddition) > RuntimeAtlasPage.DefaultSize || (tex.height + paddingAddition) > RuntimeAtlasPage.DefaultSize)
+        {
+            var size = NextPowerOfTwo(Mathf.Max(tex.width, tex.height) + paddingAddition);
+
+            if (size <= 0)
+                return null;
+
+            return CustomNewPage(size, size).Pack(tex, apply);
+        }
+
         for (int i = 0; i < Pages.Count; i++)
         {
             if ((segment = Pages[i].Pack(tex, apply)) != null)
@@ -48,13 +60,38 @@ public class RuntimeAtlasPacker
         return NewPage().Pack(tex, apply);
     }
 
+    private static int NextPowerOfTwo(int i)
+    {
+        if (i > 65535)
+            return 0;
+
+        var n = RuntimeAtlasPage.DefaultSize * 2;
+
+        while (n < i)
+            n *= 2;
+
+        return n;
+    }
+
     public Action<RuntimeAtlasPage> OnNewPage;
 
     public RuntimeAtlasPage NewPage()
     {
         var page = new RuntimeAtlasPage(Width, Height, Format, Padding);
+
         Pages.Add(page);
         OnNewPage?.Invoke(page);
+
+        return page;
+    }
+
+    public RuntimeAtlasPage CustomNewPage(int width, int height)
+    {
+        var page = new RuntimeAtlasPage(width, height, Format, Padding);
+
+        Pages.Add(page);
+        OnNewPage?.Invoke(page);
+
         return page;
     }
 
