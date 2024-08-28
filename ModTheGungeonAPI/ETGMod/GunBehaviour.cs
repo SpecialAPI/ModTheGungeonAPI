@@ -15,7 +15,7 @@ using Mono.Cecil.Cil;
 /// Base class for gun modifier behaviours.
 /// </summary>
 [HarmonyPatch]
-public class GunBehaviour : BraveBehaviour
+public class GunBehaviour : BraveBehaviour, IGunInheritable
 {
     private void Awake()
     {
