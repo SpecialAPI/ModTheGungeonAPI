@@ -268,4 +268,18 @@ internal static class HarmonyPatches
     {
         AddMissingReplacements(newCollection);
     }
+
+    [HarmonyPatch(typeof(tk2dTileMap), nameof(tk2dTileMap.Awake))]
+    [HarmonyPrefix]
+    private static void AddMissingReplacementsTilemap(tk2dTileMap __instance)
+    {
+        AddMissingReplacements(__instance.spriteCollection);
+    }
+
+    [HarmonyPatch(typeof(tk2dTileMap), nameof(tk2dTileMap.Editor__SpriteCollection), MethodType.Setter)]
+    [HarmonyPrefix]
+    private static void AddMissingReplacementsTilemapCollection(tk2dSpriteCollectionData value)
+    {
+        AddMissingReplacements(value);
+    }
 }
