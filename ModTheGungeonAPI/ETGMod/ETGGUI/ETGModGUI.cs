@@ -17,13 +17,25 @@ public class ETGModGUI : MonoBehaviour
     public static KeyCode ConsoleKey2 = KeyCode.Slash;
     public static KeyCode ConsoleKey3 = KeyCode.BackQuote;
 
+    public static KeyCode ConsolePreviousCommand = KeyCode.UpArrow;
+    public static KeyCode ConsoleNextCommand = KeyCode.DownArrow;
+    public static KeyCode ConsoleAutocomplete = KeyCode.Tab;
+
     public static KeyCode LogKey1 = KeyCode.F3;
     public static KeyCode LogKey2 = KeyCode.None;
     public static KeyCode LogKey3 = KeyCode.None;
 
+    public static KeyCode LogClear = KeyCode.C;
+    public static KeyCode LogLeaveErrors = KeyCode.F;
+    public static KeyCode LogLeaveExceptions = KeyCode.E;
+    public static KeyCode LogTop = KeyCode.T;
+    public static KeyCode LogBottom = KeyCode.B;
+
     public static KeyCode LoaderKey1 = KeyCode.F1;
     public static KeyCode LoaderKey2 = KeyCode.None;
     public static KeyCode LoaderKey3 = KeyCode.None;
+
+    public static KeyCode CloseAllKey = KeyCode.Escape;
 
     public enum MenuOpened
     {
@@ -120,7 +132,7 @@ public class ETGModGUI : MonoBehaviour
             UpdatePlayerState();
         }
 
-        if (((LogEnabled ?? true) || CurrentMenu == MenuOpened.Logger) && (Input.GetKeyDown(LogKey1) || Input.GetKeyDown(LogKey2) || Input.GetKeyDown(LogKey3)))
+        else if (((LogEnabled ?? true) || CurrentMenu == MenuOpened.Logger) && (Input.GetKeyDown(LogKey1) || Input.GetKeyDown(LogKey2) || Input.GetKeyDown(LogKey3)))
         {
             if (CurrentMenu == MenuOpened.Logger)
                 CurrentMenu = MenuOpened.None;
@@ -129,7 +141,7 @@ public class ETGModGUI : MonoBehaviour
                 CurrentMenu = MenuOpened.Logger;
         }
 
-        if (((LoaderEnabled ?? true) || CurrentMenu == MenuOpened.ModLoader) && (Input.GetKeyDown(LoaderKey1) || Input.GetKeyDown(LoaderKey2) || Input.GetKeyDown(LoaderKey3)))
+        else if(((LoaderEnabled ?? true) || CurrentMenu == MenuOpened.ModLoader) && (Input.GetKeyDown(LoaderKey1) || Input.GetKeyDown(LoaderKey2) || Input.GetKeyDown(LoaderKey3)))
         {
             if (CurrentMenu == MenuOpened.ModLoader)
                 CurrentMenu = MenuOpened.None;
@@ -141,7 +153,7 @@ public class ETGModGUI : MonoBehaviour
             UpdatePlayerState();
         }
 
-        if (CurrentMenu != MenuOpened.None && Input.GetKeyDown(KeyCode.Escape))
+        if (CurrentMenu != MenuOpened.None && Input.GetKeyDown(CloseAllKey))
             CurrentMenu = MenuOpened.None;
 
         CurrentMenuInstance.Update();

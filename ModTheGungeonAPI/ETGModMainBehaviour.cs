@@ -24,7 +24,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.8.6";
+    public const string VERSION = "1.8.7";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>
@@ -62,13 +62,25 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         ETGModGUI.ConsoleKey2 = Config.Bind("ModTheGungeonUI.Binds", "ConsoleKey2", ETGModGUI.ConsoleKey2, "One of the keys that opens/closes the Mod the Gungeon console.").Value;
         ETGModGUI.ConsoleKey3 = Config.Bind("ModTheGungeonUI.Binds", "ConsoleKey3", ETGModGUI.ConsoleKey3, "One of the keys that opens/closes the Mod the Gungeon console.").Value;
 
+        ETGModGUI.ConsoleAutocomplete = Config.Bind("ModTheGungeonUI.Binds", "ConsoleAutocomplete", ETGModGUI.ConsoleAutocomplete, "The key that autocompletes the currently entered command in the Mod the Gungeon console.").Value;
+        ETGModGUI.ConsolePreviousCommand = Config.Bind("ModTheGungeonUI.Binds", "ConsolePreviousCommand", ETGModGUI.ConsolePreviousCommand, "The key that goes to the previously entered command in the Mod the Gungeon console.").Value;
+        ETGModGUI.ConsoleNextCommand = Config.Bind("ModTheGungeonUI.Binds", "ConsoleNextCommand", ETGModGUI.ConsoleNextCommand, "The key that goes to the next entered command in the Mod the Gungeon console.").Value;
+
         ETGModGUI.LogKey1 = Config.Bind("ModTheGungeonUI.Binds", "LogKey1", ETGModGUI.LogKey1, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
         ETGModGUI.LogKey2 = Config.Bind("ModTheGungeonUI.Binds", "LogKey2", ETGModGUI.LogKey2, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
         ETGModGUI.LogKey3 = Config.Bind("ModTheGungeonUI.Binds", "LogKey3", ETGModGUI.LogKey3, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
 
+        ETGModGUI.LogClear = Config.Bind("ModTheGungeonUI.Binds", "LogClear", ETGModGUI.LogClear, "The key that clears the Mod the Gungeon debug log.").Value;
+        ETGModGUI.LogLeaveErrors = Config.Bind("ModTheGungeonUI.Binds", "LogLeaveErrors", ETGModGUI.LogLeaveErrors, "The key that clears the Mod the Gungeon debug log but leaves the errors.").Value;
+        ETGModGUI.LogLeaveExceptions = Config.Bind("ModTheGungeonUI.Binds", "LogLeaveExceptions", ETGModGUI.LogLeaveExceptions, "The key that clears the Mod the Gungeon debug log but leaves the exceptions.").Value;
+        ETGModGUI.LogBottom = Config.Bind("ModTheGungeonUI.Binds", "LogBottom", ETGModGUI.LogBottom, "The key that goes to the bottom of the Mod the Gungeon debug log.").Value;
+        ETGModGUI.LogTop = Config.Bind("ModTheGungeonUI.Binds", "LogTop", ETGModGUI.LogTop, "The key that goes to the top of the Mod the Gungeon debug log.").Value;
+
         ETGModGUI.LoaderKey1 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey1", ETGModGUI.LoaderKey1, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
         ETGModGUI.LoaderKey2 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey2", ETGModGUI.LoaderKey2, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
         ETGModGUI.LoaderKey3 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey3", ETGModGUI.LoaderKey3, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
+
+        ETGModGUI.CloseAllKey = Config.Bind("ModTheGungeonUI.Binds", "CloseAllKey", ETGModGUI.CloseAllKey, "The key that closes the currently active Mod the Gungeon menu.").Value;
 
         Gungeon.Game.Initialize();
 

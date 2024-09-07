@@ -4,6 +4,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using SGUI;
+using System.ComponentModel;
 
 public class ETGModDebugLogMenu : ETGModMenu {
 
@@ -35,15 +36,34 @@ public class ETGModDebugLogMenu : ETGModMenu {
             OnUpdateStyle = (SElement elem) => elem.Fill(),
             AutoLayout = (SGroup g) => g.AutoLayoutVertical,
             ScrollDirection = SGroup.EDirection.Vertical,
-            Children =
-            {
-                new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
-                new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
-                new SLabel("Press the \"E\" key to clear all messages but exceptions") { Foreground = Color.green },
-                new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
-                new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green },
-            }
         };
+
+        GUI.Children.AddRange(LogCommandInfo);
+    }
+
+    protected static BindingList<SElement> LogCommandInfo
+    {
+        get
+        {
+            var l = new BindingList<SElement>();
+
+            if (ETGModGUI.LogClear != KeyCode.None)
+                l.Add(new SLabel($"Press the \"{ETGModGUI.LogClear}\" key to clear all messages") { Foreground = Color.green });
+
+            if (ETGModGUI.LogLeaveErrors != KeyCode.None)
+                l.Add(new SLabel($"Press the \"{ETGModGUI.LogLeaveErrors}\" key to clear all messages but errors") { Foreground = Color.green });
+
+            if (ETGModGUI.LogLeaveExceptions != KeyCode.None)
+                l.Add(new SLabel($"Press the \"{ETGModGUI.LogLeaveExceptions}\" key to clear all messages but exceptions") { Foreground = Color.green });
+
+            if (ETGModGUI.LogBottom != KeyCode.None)
+                l.Add(new SLabel($"Press the \"{ETGModGUI.LogBottom}\" key to move to the bottom of the log") { Foreground = Color.green });
+
+            if (ETGModGUI.LogTop != KeyCode.None)
+                l.Add(new SLabel($"Press the \"{ETGModGUI.LogTop}\" key to move to the top of the log") { Foreground = Color.green });
+
+            return l;
+        }
     }
 
     public override void Update()
@@ -56,75 +76,59 @@ public class ETGModDebugLogMenu : ETGModMenu {
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.C))
+        if (Input.GetKeyDown(ETGModGUI.LogClear))
         {
             var listOfText = _AllLoggedText;
+
             GUI.Children.Clear();
             GUI.ContentSize.y = 0;
-            GUI.Children.AddRange(new()
-            {
-                new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
-                new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
-                new SLabel("Press the \"E\" key to clear all messages but exceptions") { Foreground = Color.green },
-                new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
-                new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green }
-            });
+            GUI.Children.AddRange(LogCommandInfo);
+
             listOfText.Clear();
+
             _LoggedTextAddIndex = 0;
             GUI.ScrollPosition.y = 0f;
         }
-        else if (Input.GetKeyDown(KeyCode.F))
+        else if (Input.GetKeyDown(ETGModGUI.LogLeaveErrors))
         {
             if (_AllLoggedText.Exists(x => x.LogType != LogType.Exception && x.LogType != LogType.Error))
             {
                 var listOfText = _AllLoggedText;
-                List<LoggedText> toAddBack = new();
+                var toAddBack = new List<LoggedText>();
+
                 GUI.Children.Clear();
                 GUI.ContentSize.y = 0;
-                GUI.Children.AddRange(new()
-                {
-                    new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
-                    new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
-                    new SLabel("Press the \"E\" key to clear all messages but exceptions") { Foreground = Color.green },
-                    new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
-                    new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green }
-                });
+                GUI.Children.AddRange(LogCommandInfo);
+
                 foreach (LoggedText t in listOfText)
                 {
                     if (t.LogType is LogType.Exception or LogType.Error)
-                    {
                         toAddBack.Add(new LoggedText(t.LogMessage, t.Stacktace, t.LogType) { LogCount =  t.LogCount });
-                    }
                 }
+
                 listOfText.Clear();
                 _LoggedTextAddIndex = 0;
                 listOfText.AddRange(toAddBack);
                 GUI.ScrollPosition.y = 0f;
             }
         }
-        else if (Input.GetKeyDown(KeyCode.E))
+        else if (Input.GetKeyDown(ETGModGUI.LogLeaveExceptions))
         {
             if (_AllLoggedText.Exists(x => x.LogType != LogType.Exception))
             {
                 var listOfText = _AllLoggedText;
-                List<LoggedText> toAddBack = new();
+                var toAddBack = new List<LoggedText>();
+
                 GUI.Children.Clear();
                 GUI.ContentSize.y = 0;
-                GUI.Children.AddRange(new()
-                {
-                    new SLabel("Press the \"C\" key to clear all messages") { Foreground = Color.green },
-                    new SLabel("Press the \"F\" key to clear all messages but errors") { Foreground = Color.green },
-                    new SLabel("Press the \"E\" key to clear all messages but exceptions") { Foreground = Color.green },
-                    new SLabel("Press the \"B\" key to move to the bottom of the log") { Foreground = Color.green },
-                    new SLabel("Press the \"T\" key to move to the top of the log") { Foreground = Color.green }
-                });
+                GUI.Children.AddRange(LogCommandInfo);
+
                 foreach (LoggedText t in listOfText)
                 {
                     if (t.LogType is LogType.Exception)
-                    {
                         toAddBack.Add(new LoggedText(t.LogMessage, t.Stacktace, t.LogType) { LogCount = t.LogCount });
-                    }
                 }
+
                 listOfText.Clear();
                 _LoggedTextAddIndex = 0;
                 listOfText.AddRange(toAddBack);
@@ -138,10 +142,10 @@ public class ETGModDebugLogMenu : ETGModMenu {
             ++_LoggedTextAddIndex;
         }
 
-        if (Input.GetKeyDown(KeyCode.B))
+        if (Input.GetKeyDown(ETGModGUI.LogBottom))
             GUI.ScrollPosition.y = float.MaxValue;
 
-        if (Input.GetKeyDown(KeyCode.T))
+        if (Input.GetKeyDown(ETGModGUI.LogTop))
             GUI.ScrollPosition.y = 0f;
     }
 

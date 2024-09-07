@@ -438,18 +438,18 @@ public class ETGModConsole : ETGModMenu
                     },
                     OverrideTab = true,
                     OnKey = delegate(STextField field, bool keyDown, KeyCode keyCode) {
-                        if (!keyDown) {
+                        if (!keyDown || keyCode == KeyCode.None) {
                             return;
                         }
-                        if (keyCode == KeyCode.Escape || keyCode == KeyCode.F2 || keyCode == KeyCode.Slash || keyCode == KeyCode.BackQuote) {
+                        if (keyCode == ETGModGUI.CloseAllKey || keyCode == ETGModGUI.ConsoleKey1 || keyCode == ETGModGUI.ConsoleKey2 || keyCode == ETGModGUI.ConsoleKey3) {
                             ETGModGUI.CurrentMenu = ETGModGUI.MenuOpened.None;
                             return;
                         }
-                        if (keyCode == KeyCode.Tab) {
+                        if (keyCode == ETGModGUI.ConsoleAutocomplete) {
                             ShowAutocomplete();
                             return;
                         }
-                        if (keyCode == KeyCode.UpArrow || keyCode == KeyCode.DownArrow)
+                        if (keyCode == ETGModGUI.ConsolePreviousCommand || keyCode == ETGModGUI.ConsoleNextCommand)
                         {
                             if (lastCommands.Count <= 0)
                             {
@@ -457,7 +457,7 @@ public class ETGModConsole : ETGModMenu
                                 return;
                             }
 
-                            if (keyCode == KeyCode.UpArrow)
+                            if (keyCode == ETGModGUI.ConsolePreviousCommand)
                             {
                                 currentCommandIndex--;
                                 if (currentCommandIndex <= 0)
@@ -465,7 +465,7 @@ public class ETGModConsole : ETGModMenu
                                     currentCommandIndex = 0;
                                 }
                             }
-                            else if(keyCode == KeyCode.DownArrow)
+                            else if(keyCode == ETGModGUI.ConsoleNextCommand)
                             {
                                 currentCommandIndex++;
                                 if (currentCommandIndex >= lastCommands.Count)
