@@ -13,6 +13,18 @@ public class ETGModGUI : MonoBehaviour
     public static bool? LogEnabled = null;
     public static bool? LoaderEnabled = null;
 
+    public static KeyCode ConsoleKey1 = KeyCode.F2;
+    public static KeyCode ConsoleKey2 = KeyCode.Slash;
+    public static KeyCode ConsoleKey3 = KeyCode.BackQuote;
+
+    public static KeyCode LogKey1 = KeyCode.F3;
+    public static KeyCode LogKey2 = KeyCode.None;
+    public static KeyCode LogKey3 = KeyCode.None;
+
+    public static KeyCode LoaderKey1 = KeyCode.F1;
+    public static KeyCode LoaderKey2 = KeyCode.None;
+    public static KeyCode LoaderKey3 = KeyCode.None;
+
     public enum MenuOpened
     {
         None,
@@ -96,37 +108,37 @@ public class ETGModGUI : MonoBehaviour
 
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            if (CurrentMenu == MenuOpened.ModLoader)
-                CurrentMenu = MenuOpened.None;
-
-            else if (LoaderEnabled ?? true)
-                CurrentMenu = MenuOpened.ModLoader;
-
-            UpdateTimeScale();
-            UpdatePlayerState();
-        }
-
-        if (Input.GetKeyDown(KeyCode.F2) || Input.GetKeyDown(KeyCode.Slash) || Input.GetKeyDown(KeyCode.BackQuote))
+        if (((ConsoleEnabled ?? true) || CurrentMenu == MenuOpened.Console) && (Input.GetKeyDown(ConsoleKey1) || Input.GetKeyDown(ConsoleKey2) || Input.GetKeyDown(ConsoleKey3)))
         {
             if (CurrentMenu == MenuOpened.Console)
                 CurrentMenu = MenuOpened.None;
 
-            else if (ConsoleEnabled ?? true)
+            else
                 CurrentMenu = MenuOpened.Console;
 
             UpdateTimeScale();
             UpdatePlayerState();
         }
 
-        if (Input.GetKeyDown(KeyCode.F3))
+        if (((LogEnabled ?? true) || CurrentMenu == MenuOpened.Logger) && (Input.GetKeyDown(LogKey1) || Input.GetKeyDown(LogKey2) || Input.GetKeyDown(LogKey3)))
         {
             if (CurrentMenu == MenuOpened.Logger)
                 CurrentMenu = MenuOpened.None;
 
-            else if (LogEnabled ?? true)
+            else
                 CurrentMenu = MenuOpened.Logger;
+        }
+
+        if (((LoaderEnabled ?? true) || CurrentMenu == MenuOpened.ModLoader) && (Input.GetKeyDown(LoaderKey1) || Input.GetKeyDown(LoaderKey2) || Input.GetKeyDown(LoaderKey3)))
+        {
+            if (CurrentMenu == MenuOpened.ModLoader)
+                CurrentMenu = MenuOpened.None;
+
+            else
+                CurrentMenu = MenuOpened.ModLoader;
+
+            UpdateTimeScale();
+            UpdatePlayerState();
         }
 
         if (CurrentMenu != MenuOpened.None && Input.GetKeyDown(KeyCode.Escape))

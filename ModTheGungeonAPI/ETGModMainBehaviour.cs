@@ -24,7 +24,7 @@ public class ETGModMainBehaviour : BaseUnityPlugin
     /// <summary>
     /// The current version of the MTG API.
     /// </summary>
-    public const string VERSION = "1.8.5";
+    public const string VERSION = "1.8.6";
     /// <summary>
     /// Current instance of the MTG API behaviour.
     /// </summary>
@@ -57,6 +57,18 @@ public class ETGModMainBehaviour : BaseUnityPlugin
         ETGModGUI.ConsoleEnabled = Config.Bind("ModTheGungeonUI", "Console", true, "Whether or not the Mod the Gungeon console is enabled or not.").Value;
         ETGModGUI.LogEnabled = Config.Bind("ModTheGungeonUI", "DebugLog", false, "Whether or not the Mod the Gungeon debug log is enabled or not.").Value;
         ETGModGUI.LoaderEnabled = Config.Bind("ModTheGungeonUI", "ModsMenu", true, "Whether or not the Mod the Gungeon mods menu is enabled or not.").Value;
+
+        ETGModGUI.ConsoleKey1 = Config.Bind("ModTheGungeonUI.Binds", "ConsoleKey1", ETGModGUI.ConsoleKey1, "One of the keys that opens/closes the Mod the Gungeon console.").Value;
+        ETGModGUI.ConsoleKey2 = Config.Bind("ModTheGungeonUI.Binds", "ConsoleKey2", ETGModGUI.ConsoleKey2, "One of the keys that opens/closes the Mod the Gungeon console.").Value;
+        ETGModGUI.ConsoleKey3 = Config.Bind("ModTheGungeonUI.Binds", "ConsoleKey3", ETGModGUI.ConsoleKey3, "One of the keys that opens/closes the Mod the Gungeon console.").Value;
+
+        ETGModGUI.LogKey1 = Config.Bind("ModTheGungeonUI.Binds", "LogKey1", ETGModGUI.LogKey1, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
+        ETGModGUI.LogKey2 = Config.Bind("ModTheGungeonUI.Binds", "LogKey2", ETGModGUI.LogKey2, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
+        ETGModGUI.LogKey3 = Config.Bind("ModTheGungeonUI.Binds", "LogKey3", ETGModGUI.LogKey3, "One of the keys that opens/closes the Mod the Gungeon debug log.").Value;
+
+        ETGModGUI.LoaderKey1 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey1", ETGModGUI.LoaderKey1, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
+        ETGModGUI.LoaderKey2 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey2", ETGModGUI.LoaderKey2, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
+        ETGModGUI.LoaderKey3 = Config.Bind("ModTheGungeonUI.Binds", "ModsMenuKey3", ETGModGUI.LoaderKey3, "One of the keys that opens/closes the Mod the Gungeon mods menu.").Value;
 
         Gungeon.Game.Initialize();
 
