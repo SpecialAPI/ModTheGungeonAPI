@@ -7,7 +7,7 @@
     <authors>ModTheGungeonAPI</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
-    <iconUrl>https://gcdn.thunderstore.io/live/repository/icons/MtG_API-Mod_the_Gungeon_API-1.8.5.png.256x256_q95_crop.png</iconUrl>
+    <iconUrl>https://gcdn.thunderstore.io/live/repository/icons/MtG_API-Mod_the_Gungeon_API-1.8.6.png.256x256_q95_crop.png</iconUrl>
     <projectUrl>https://github.com/SpecialAPI/ModTheGungeonAPI</projectUrl>
     <description>An API for Enter the Gungeon that brings the good parts of MtG (Mod the Gungeon) to BepInEx as a plugin.</description>
     <releaseNotes></releaseNotes>
