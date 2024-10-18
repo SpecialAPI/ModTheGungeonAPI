@@ -103,6 +103,8 @@ namespace SGUI {
             Draw.Rect(this, Position, Size, Background);
         }
         public override void Render() {
+            if (!Visible)
+                return;
             if (Backend.ScrollBarSizes.x == 0f && ScrollDirection != EDirection.None) {
                 ScrollPosition = new Vector2(
                     Mathf.Clamp(ScrollPosition.x + ScrollMomentum.x, 0f, ContentSize.x - Size.x),

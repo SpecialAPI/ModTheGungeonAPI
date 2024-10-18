@@ -259,14 +259,15 @@ namespace SGUI {
                 Background = color;
             }
 
-            Modifiers.ForEach(_ModifierUpdateStyle);
+            for (int i = 0; i < Modifiers.Count; ++i)
+            {
+                Modifiers[i].Elem = this;
+                Modifiers[i].UpdateStyle();
+            }
             if (OnUpdateStyle != null) OnUpdateStyle(this);
             UpdateChildrenStyles();
         }
-        protected void _ModifierUpdateStyle(SModifier modifier) {
-            modifier.Elem = this;
-            modifier.UpdateStyle();
-        }
+
         public virtual void UpdateChildrenStyles() {
             for (int i = 0; i < Children.Count; i++) {
                 SElement child = Children[i];
@@ -278,13 +279,14 @@ namespace SGUI {
         }
 
         public virtual void Update() {
-            Modifiers.ForEach(_ModifierUpdate);
+            for (int i = 0; i < Modifiers.Count; ++i)
+            {
+                Modifiers[i].Elem = this;
+                Modifiers[i].Update();
+            }
             UpdateChildren();
         }
-        protected void _ModifierUpdate(SModifier modifier) {
-            modifier.Elem = this;
-            modifier.Update();
-        }
+
         public void UpdateChildren() {
             for (int i = 0; i < Children.Count; i++) {
                 SElement child = Children[i];
