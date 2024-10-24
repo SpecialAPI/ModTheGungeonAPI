@@ -640,6 +640,16 @@ public class GunBehaviour : BraveBehaviour, IGunInheritable
     }
 
     /// <summary>
+    /// Runs to check whether or not this gun should automatically reload on an empty clip. Additionally gets called every frame to 
+    /// </summary>
+    /// <param name="owner">The owner of this gun.</param>
+    /// <param name="gun">This gun.</param>
+    /// <param name="autoreload">Whether or not this gun should automatically reload.</param>
+    public virtual void AutoreloadOnEmptyClip(GameActor owner, Gun gun, ref bool autoreload)
+    {
+    }
+
+    /// <summary>
     /// Modifies the amount of current shots left in the clip and the max clip capacity that's visually displayed in the clip UI.
     /// </summary>
     /// <param name="gun">The gun that the clip belongs to.</param>
@@ -712,6 +722,9 @@ public class GunBehaviour : BraveBehaviour, IGunInheritable
 
     [NonSerialized]
     internal bool cache_ammoCollectedSuccessfully = false;
+
+    [NonSerialized]
+    internal bool? cache_shouldAutoreload = false;
 
     [SerializeField]
     private bool everPickedUp;

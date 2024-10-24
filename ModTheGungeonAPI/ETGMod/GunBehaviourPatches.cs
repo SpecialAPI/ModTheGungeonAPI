@@ -668,7 +668,6 @@ internal static class GunBehaviourPatches
     private static void OnInventoryReload_Transpiler(ILContext ctx)
     {
         var crs = new ILCursor(ctx);
-
         var listGetItem = AccessTools.Method(typeof(List<Gun>), "get_Item");
 
         for(var i = 0; i < 6; i++)
@@ -717,6 +716,99 @@ internal static class GunBehaviourPatches
         return gun;
     }
 
+    [HarmonyPatch(typeof(Gun), nameof(Gun.CeaseAttack))]
+    [HarmonyILManipulator]
+    private static void AutoreloadOnEmptyClip_Transpiler(ILContext ctx)
+    {
+        var crs = new ILCursor(ctx);
+
+        if (!crs.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<ProjectileModule>(nameof(ProjectileModule.GetModNumberOfShotsInClip))))
+            return;
+
+        crs.Emit(OpCodes.Ldarg_0);
+        crs.Emit(OpCodes.Call, aoec_mc);
+    }
+
+    private static int AutoreloadOnEmptyClip_MethodCall(int curr, Gun g)
+    {
+        if(g == null || g.ClipShotsRemaining > 0)
+            return curr;
+
+        var behavs = g.GetComponents<GunBehaviour>();
+
+        if(behavs == null || behavs.Length <= 0)
+            return curr;
+
+        var shouldAutoreload = curr == 1;
+
+        foreach(var behav in behavs)
+        {
+            if(behav == null)
+                continue;
+
+            behav.AutoreloadOnEmptyClip(g.CurrentOwner, g, ref shouldAutoreload);
+        }
+
+        foreach(var behav in behavs)
+        {
+            if (behav == null)
+                continue;
+
+            behav.cache_shouldAutoreload = shouldAutoreload;
+        }
+
+        if (shouldAutoreload)
+            return 1;
+
+        if (!shouldAutoreload && curr == 1)
+            return 2;
+
+        return curr;
+    }
+
+    [HarmonyPatch(typeof(GameUIRoot), nameof(GameUIRoot.UpdateGunDataInternal))]
+    [HarmonyILManipulator]
+    private static void AutoreloadOnEmptyClip_ModifyReloadLabel_Transpiler(ILContext ctx)
+    {
+        var crs = new ILCursor(ctx);
+
+        if (!crs.TryGotoNext(MoveType.After, x => x.MatchCallOrCallvirt<Gun>($"get_{nameof(Gun.ClipCapacity)}")))
+            return;
+
+        crs.Emit(OpCodes.Ldloc_0);
+        crs.Emit(OpCodes.Call, aoec_mrl_m);
+    }
+
+    private static int AutoreloadOnEmptyClip_ModifyReloadLabel_Modify(int curr, Gun g)
+    {
+        if (g == null || g.ammo <= 0)
+            return curr;
+
+        var behavs = g.GetComponents<GunBehaviour>();
+
+        if (behavs == null || behavs.Length <= 0)
+            return curr;
+
+        var autoreloads = curr <= 1;
+
+        foreach (var behav in behavs)
+        {
+            if (behav == null || behav.cache_shouldAutoreload == null)
+                continue;
+
+            autoreloads = behav.cache_shouldAutoreload ?? false;
+            break;
+        }
+
+        if (autoreloads)
+            return 1;
+
+        if (!autoreloads && curr <= 1)
+            return 2;
+
+        return curr;
+    }
+
     private static readonly MethodInfo ppbct_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(PostProcessBeamChanceTick_MethodCall));
     private static readonly MethodInfo ppbt_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(PostProcessBeamTick_MethodCall));
     private static readonly MethodInfo mcc_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(ModifyClipCount_MethodCall));
@@ -730,5 +822,7 @@ internal static class GunBehaviourPatches
     private static readonly MethodInfo cca_pt_beq = AccessTools.Method(typeof(GunBehaviourPatches), nameof(CanCollectAmmo_PartTwo_BEQ));
     private static readonly MethodInfo oac_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(OnAmmoCollected_MethodCall));
     private static readonly MethodInfo oir_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(OnInventoryReload_MethodCall));
+    private static readonly MethodInfo aoec_mc = AccessTools.Method(typeof(GunBehaviourPatches), nameof(AutoreloadOnEmptyClip_MethodCall));
+    private static readonly MethodInfo aoec_mrl_m = AccessTools.Method(typeof(GunBehaviourPatches), nameof(AutoreloadOnEmptyClip_ModifyReloadLabel_Modify));
     #endregion
 }
