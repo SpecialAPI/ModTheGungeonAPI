@@ -664,16 +664,22 @@ namespace SGUI {
             Text_(elem, position, size, text, alignment, icon);
         }
         private void Text_(SElement elem, Vector2 position, Vector2 size, string text, TextAnchor alignment = TextAnchor.MiddleCenter, Texture icon = null, bool registerProperly = true) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            Font newFont = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            if (Skin.font != newFont)
+                Skin.font = newFont; // setting the font property makes Unity rebuild a bunch of caches, so make sure it's actually changed
             float y = 0f;
-
-            Vector2 iconScale =
-                ((elem as SLabel) == null ? new Vector2?() : (elem as SLabel).IconScale) ??
-                ((elem as SButton) == null ? new Vector2?() : (elem as SButton).IconScale) ??
-                Vector2.one;
-
-            float iconWidth = icon != null ? (icon.width * iconScale.x + 1f) : 0f;
-            float iconHeight = icon != null ? icon.height * iconScale.y : 0f;
+            float iconWidth = 0f;
+            float iconHeight = 0f;
+            if (icon != null)
+            {
+                Vector2 iconScale = Vector2.one;
+                if (elem is SLabel slabel)
+                    iconScale = slabel.IconScale;
+                else if (elem is SButton sbutton)
+                    iconScale = sbutton.IconScale;
+                iconWidth = icon.width * iconScale.x + 1f;
+                iconHeight = icon.height * iconScale.y;
+            }
 
             if (text.Contains("\n")) {
                 string[] lines = text.Split('\n');
@@ -706,7 +712,7 @@ namespace SGUI {
                         position + new Vector2(0f, size.y * 0.5f - iconHeight * 0.5f),
                         new Vector2(iconWidth, iconHeight),
                         icon,
-                        ((elem == null || elem.Colors == null) ? new Color?() : elem.Colors.AtOr(1, Color.white)) ?? Color.white
+                        ((elem == null || elem.Colors == null || elem.Colors.Length < 2) ? Color.white : elem.Colors[1])
                     );
                 }
                 return;
@@ -718,7 +724,7 @@ namespace SGUI {
             }
             Rect bounds = new Rect(position + new Vector2(iconWidth, y), size - new Vector2(iconWidth, y * 2f));
 
-            Skin.label.normal.textColor = (elem == null ? new Color?() : elem.Foreground) ?? Color.white;
+            Skin.label.normal.textColor = (elem == null ? Color.white : elem.Foreground);
             if (elem != null && elem is SButton) {
                 Skin.label.normal.textColor = Skin.label.normal.textColor * (elem.IsHovered ? 1f : 0.8f);
             }
@@ -734,13 +740,15 @@ namespace SGUI {
                     position + new Vector2(0f, size.y * 0.5f - iconHeight * 0.5f),
                     new Vector2(iconWidth, iconHeight),
                     icon,
-                    ((elem == null || elem.Colors == null) ? new Color?() : elem.Colors.AtOr(1, Color.white)) ?? Color.white
+                    ((elem == null || elem.Colors == null || elem.Colors.Length < 2) ? Color.white : elem.Colors[1])
                 );
             }
         }
 
         public void TextField(SElement elem, Vector2 position, Vector2 size, ref string text) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            Font newFont = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            if (Skin.font != newFont)
+                Skin.font = newFont; // setting the font property makes Unity rebuild a bunch of caches, so make sure it's actually changed
             PreparePosition(elem, ref position);
 
             if (elem != null && IsOnGUIRepainting) {
@@ -863,7 +871,9 @@ namespace SGUI {
 
 
         public void Button(SElement elem, Vector2 position, Vector2 size, string text, TextAnchor alignment = TextAnchor.MiddleCenter, Texture icon = null) {
-            Skin.font = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            Font newFont = (Font) (elem == null ? null : elem.Font) ?? _Font;
+            if (Skin.font != newFont)
+                Skin.font = newFont; // setting the font property makes Unity rebuild a bunch of caches, so make sure it's actually changed
 
             if (elem != null && IsOnGUIRepainting) {
                 GUI.backgroundColor = elem.Background;
@@ -1053,6 +1063,9 @@ namespace SGUI {
         public Vector2 MeasureText(string text, Vector2? size = null, object font = null) {
             return MeasureText(ref text, size, font);
         }
+
+        // cache StringBuilder since it allocates memory very quickly
+        private static readonly StringBuilder rebuilt = new StringBuilder("", 1000);
         public Vector2 MeasureText(ref string text, Vector2? size = null, object font = null) {
             Font font_ = (Font) font ?? _Font;
 
@@ -1063,7 +1076,7 @@ namespace SGUI {
             float maxX = 0f;
             float y = 0f;
 
-            StringBuilder rebuilt = new StringBuilder();
+            rebuilt.Length = 0;
             int lastSpace = -1;
             int offset = 0;
             for (int i = 0; i < text.Length; i++) {
