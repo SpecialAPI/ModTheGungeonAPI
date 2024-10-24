@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using GungeonSupportedLanguages = StringTableManager.GungeonSupportedLanguages;
 
 [HarmonyPatch]
 public class StringDB
@@ -48,7 +49,7 @@ public class StringDB
     /// <summary>
     /// Runs when the game's language is changed.
     /// </summary>
-    public Action<StringTableManager.GungeonSupportedLanguages> OnLanguageChanged;
+    public Action<GungeonSupportedLanguages> OnLanguageChanged;
 
     /// <summary>
     /// Runs for each UI language manager when the game's language is changed or when a UI language manager is created.
@@ -72,13 +73,16 @@ public class StringDB
     {
         ETGMod.Databases.Strings.UI.LanguageChanged(__instance);
         ETGMod.Databases.Strings.OnUILanguageChanged?.Invoke(__instance, language);
+
         if (forceReload)
         {
             dfControl[] controls = __instance.GetComponentsInChildren<dfControl>();
+
             for (int i = 0; i < controls.Length; i++)
             {
                 controls[i].Localize();
             }
+
             for (int j = 0; j < controls.Length; j++)
             {
                 controls[j].PerformLayout();
@@ -110,7 +114,7 @@ public class StringDB
 public sealed class StringDBTable
 {
     private readonly Func<Dictionary<string, StringTableManager.StringCollection>> _getTable;
-    private readonly Dictionary<string, StringTableManager.StringCollection> _changes;
+    private readonly Dictionary<GungeonSupportedLanguages, Dictionary<string, StringTableManager.StringCollection>> _changes;
     private Dictionary<string, StringTableManager.StringCollection> _cachedTable;
 
     /// <summary>
@@ -136,10 +140,34 @@ public sealed class StringDBTable
     public StringTableManager.StringCollection this[string key]
     {
         get => Table[key];
+        set => this[key, GungeonSupportedLanguages.ENGLISH] = value;
+    }
+
+    public StringTableManager.StringCollection this[string key, GungeonSupportedLanguages lang]
+    {
         set
         {
+            if (!_changes.TryGetValue(lang, out var change))
+                _changes[lang] = change = new();
+
+            change[key] = value;
+
+            if (lang == GungeonSupportedLanguages.ENGLISH && StringTableManager.CurrentLanguage != lang && _changes.TryGetValue(StringTableManager.CurrentLanguage, out var locaChanges) && locaChanges.ContainsKey(key))
+                return; // Setting string in english (default language), but there is already a localized string for this.
+
+            if (lang != GungeonSupportedLanguages.ENGLISH)
+            {
+                if (!_changes.TryGetValue(GungeonSupportedLanguages.ENGLISH, out var englishChanges))
+                    _changes[GungeonSupportedLanguages.ENGLISH] = englishChanges = new();
+
+                if (!englishChanges.ContainsKey(key))
+                    englishChanges[key] = value; // English acts as a "default" language, make non-english strings the default if a default doesn't already exist.
+
+                else if (StringTableManager.CurrentLanguage != lang && _changes.TryGetValue(StringTableManager.CurrentLanguage, out locaChanges) && locaChanges.ContainsKey(key))
+                    return;
+            }
+
             Table[key] = value;
-            _changes[key] = value;
             JournalEntry.ReloadDataSemaphore++;
         }
     }
@@ -156,11 +184,14 @@ public sealed class StringDBTable
     /// </summary>
     /// <param name="key">The key to the string.</param>
     /// <param name="value">The new value for the string.</param>
-    public void Set(string key, string value)
+    public void Set(string key, string value) => Set(GungeonSupportedLanguages.ENGLISH, key, value);
+
+    public void Set(GungeonSupportedLanguages lang, string key, string value)
     {
         var collection = new StringTableManager.SimpleStringCollection();
         collection.AddString(value, 1f);
-        this[key] = collection;
+
+        this[key, lang] = collection;
     }
 
     /// <summary>
@@ -168,11 +199,14 @@ public sealed class StringDBTable
     /// </summary>
     /// <param name="key">The key to the string.</param>
     /// <param name="values">The new values for the string that all have the weight 1.</param>
-    public void SetComplex(string key, params string[] values)
+    public void SetComplex(string key, params string[] values) => SetComplex(GungeonSupportedLanguages.ENGLISH, key, values);
+
+    public void SetComplex(GungeonSupportedLanguages lang, string key, params string[] values)
     {
         var collection = new StringTableManager.ComplexStringCollection();
         values.Do(x => collection.AddString(x, 1f));
-        this[key] = collection;
+
+        this[key, lang] = collection;
     }
 
     /// <summary>
@@ -180,11 +214,14 @@ public sealed class StringDBTable
     /// </summary>
     /// <param name="key">The key to the string.</param>
     /// <param name="values">The new values and weights for the string where the strings are values and floats are weights.</param>
-    public void SetComplex(string key, params Tuple<string, float>[] values)
+    public void SetComplex(string key, params Tuple<string, float>[] values) => SetComplex(GungeonSupportedLanguages.ENGLISH, key, values);
+    
+    public void SetComplex(GungeonSupportedLanguages lang, string key, params Tuple<string, float>[] values)
     {
         var collection = new StringTableManager.ComplexStringCollection();
         values.Do(x => collection.AddString(x.First, x.Second));
-        this[key] = collection;
+
+        this[key, lang] = collection;
     }
 
     /// <summary>
@@ -193,18 +230,25 @@ public sealed class StringDBTable
     public void LanguageChanged()
     {
         _cachedTable = null;
-        Dictionary<string, StringTableManager.StringCollection> table = Table;
+        var table = Table;
 
-        foreach (var kvp in _changes)
+        if(_changes.TryGetValue(GungeonSupportedLanguages.ENGLISH, out var englishChanges))
         {
-            table[kvp.Key] = kvp.Value;
+            foreach(var kvp in englishChanges)
+                table[kvp.Key] = kvp.Value;
+        }
+
+        if(_changes.TryGetValue(StringTableManager.CurrentLanguage, out var locaChanges))
+        {
+            foreach (var kvp in locaChanges)
+                table[kvp.Key] = kvp.Value;
         }
     }
 }
 
 public sealed class UIStringDBTable
 {
-    private readonly Dictionary<string, string> _changes = new();
+    private readonly Dictionary<dfLanguageCode, Dictionary<string, string>> _changes = new();
 
     /// <summary>
     /// Reapplies all of the changes made to the given manager.
@@ -212,9 +256,16 @@ public sealed class UIStringDBTable
     /// <param name="man">The manager to reapply the changes to.</param>
     public void LanguageChanged(dfLanguageManager man)
     {
-        foreach(var kvp in _changes)
+        if(_changes.TryGetValue(dfLanguageCode.EN, out var englishChanges))
         {
-            man.strings[kvp.Key] = kvp.Value;
+            foreach (var kvp in englishChanges)
+                man.strings[kvp.Key] = kvp.Value;
+        }
+
+        if(_changes.TryGetValue(man.CurrentLanguage, out var locaChanges))
+        {
+            foreach (var kvp in locaChanges)
+                man.strings[kvp.Key] = kvp.Value;
         }
     }
 
@@ -225,20 +276,42 @@ public sealed class UIStringDBTable
     /// <param name="value">The new value for the string.</param>
     public void Set(string key, string value)
     {
-        if(dfGUIManager.activeInstances != null)
+        Set(dfLanguageCode.EN, key, value);
+    }
+
+    public void Set(dfLanguageCode lang, string key, string value)
+    {
+        if (!_changes.TryGetValue(lang, out var change))
+            _changes[lang] = change = new();
+
+        change[key] = value;
+
+        if(lang != dfLanguageCode.EN)
         {
-            foreach (var man in dfGUIManager.ActiveManagers)
-            {
-                if (man != null)
-                {
-                    var lang = man.GetComponent<dfLanguageManager>();
-                    if (lang != null)
-                    {
-                        lang.strings[key] = value;
-                    }
-                }
-            }
+            if (!_changes.TryGetValue(dfLanguageCode.EN, out var englishChanges))
+                _changes[dfLanguageCode.EN] = englishChanges = new();
+
+            if (!englishChanges.ContainsKey(key))
+                englishChanges[key] = value; // English acts as a "default" language, make non-english strings the default if a default doesn't already exist.
         }
-        _changes[key] = value;
+
+        if (dfGUIManager.ActiveManagers == null)
+            return;
+
+        foreach (var man in dfGUIManager.ActiveManagers)
+        {
+            if (man == null)
+                continue;
+
+            var lman = man.GetComponent<dfLanguageManager>();
+
+            if (lman == null)
+                continue;
+
+            if (lman.CurrentLanguage != lang && _changes.TryGetValue(lman.CurrentLanguage, out var locaChanges) && locaChanges.ContainsKey(key))
+                continue;
+
+            lman.strings[key] = value;
+        }
     }
 }
