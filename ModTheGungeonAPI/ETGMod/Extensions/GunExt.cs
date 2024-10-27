@@ -16,6 +16,12 @@ public static class GunExt
     /// <param name="text">The new name for the item.</param>
     public static void SetName(this PickupObject item, string text) => item.SetName(StringTableManager.GungeonSupportedLanguages.ENGLISH, text);
 
+    /// <summary>
+    /// Sets the given item's name to the given string for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the name.</param>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new name for the item.</param>
     public static void SetName(this PickupObject item, StringTableManager.GungeonSupportedLanguages lang, string text)
     {
         ETGMod.Databases.Strings.Items.Set(lang, item.encounterTrackable.journalData.PrimaryDisplayName, text);
@@ -28,6 +34,12 @@ public static class GunExt
     /// <param name="text">The new short description for the item.</param>
     public static void SetShortDescription(this PickupObject item, string text) => item.SetShortDescription(StringTableManager.GungeonSupportedLanguages.ENGLISH, text);
 
+    /// <summary>
+    /// Sets the given item's short description to the given string for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the short description.</param>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new short description for the item.</param>
     public static void SetShortDescription(this PickupObject item, StringTableManager.GungeonSupportedLanguages lang, string text)
     {
         ETGMod.Databases.Strings.Items.Set(lang, item.encounterTrackable.journalData.NotificationPanelDescription, text);
@@ -38,8 +50,14 @@ public static class GunExt
     /// </summary>
     /// <param name="item">The item to rename.</param>
     /// <param name="text">The new long description for the item.</param>
-    public static void SetLongDescription(this PickupObject item, string text) => item.SetLongDescription(StringTableManager.GungeonSupportedLanguages.ENGLISH, text); 
+    public static void SetLongDescription(this PickupObject item, string text) => item.SetLongDescription(StringTableManager.GungeonSupportedLanguages.ENGLISH, text);
 
+    /// <summary>
+    /// Sets the given item's long description to the given string.
+    /// </summary>
+    /// <param name="lang">The language for which to set the long description.</param>
+    /// <param name="item">The item to rename.</param>
+    /// <param name="text">The new long description for the item.</param>
     public static void SetLongDescription(this PickupObject item, StringTableManager.GungeonSupportedLanguages lang, string text)
     {
         ETGMod.Databases.Strings.Items.Set(lang, item.encounterTrackable.journalData.AmmonomiconFullEntry, text);

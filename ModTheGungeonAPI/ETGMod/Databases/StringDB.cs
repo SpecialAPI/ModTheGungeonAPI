@@ -143,6 +143,12 @@ public sealed class StringDBTable
         set => this[key, GungeonSupportedLanguages.ENGLISH] = value;
     }
 
+    /// <summary>
+    /// Sets a string collection to this table for a specific language.
+    /// </summary>
+    /// <param name="key">The key to the string collection.</param>
+    /// <param name="lang">The language for which to set the string collection</param>
+    /// <returns>The string table found.</returns>
     public StringTableManager.StringCollection this[string key, GungeonSupportedLanguages lang]
     {
         set
@@ -186,6 +192,12 @@ public sealed class StringDBTable
     /// <param name="value">The new value for the string.</param>
     public void Set(string key, string value) => Set(GungeonSupportedLanguages.ENGLISH, key, value);
 
+    /// <summary>
+    /// Sets a string with the given key to the given value for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the string.</param>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="value">The new value for the string.</param>
     public void Set(GungeonSupportedLanguages lang, string key, string value)
     {
         var collection = new StringTableManager.SimpleStringCollection();
@@ -201,6 +213,12 @@ public sealed class StringDBTable
     /// <param name="values">The new values for the string that all have the weight 1.</param>
     public void SetComplex(string key, params string[] values) => SetComplex(GungeonSupportedLanguages.ENGLISH, key, values);
 
+    /// <summary>
+    /// Sets a string with the given key to the given values that all have the weight 1 for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the string.</param>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="values">The new values for the string that all have the weight 1.</param>
     public void SetComplex(GungeonSupportedLanguages lang, string key, params string[] values)
     {
         var collection = new StringTableManager.ComplexStringCollection();
@@ -215,7 +233,14 @@ public sealed class StringDBTable
     /// <param name="key">The key to the string.</param>
     /// <param name="values">The new values and weights for the string where the strings are values and floats are weights.</param>
     public void SetComplex(string key, params Tuple<string, float>[] values) => SetComplex(GungeonSupportedLanguages.ENGLISH, key, values);
-    
+
+
+    /// <summary>
+    /// Sets a string with the given key to the given values for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the string.</param>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="values">The new values and weights for the string where the strings are values and floats are weights.</param>
     public void SetComplex(GungeonSupportedLanguages lang, string key, params Tuple<string, float>[] values)
     {
         var collection = new StringTableManager.ComplexStringCollection();
@@ -279,6 +304,12 @@ public sealed class UIStringDBTable
         Set(dfLanguageCode.EN, key, value);
     }
 
+    /// <summary>
+    /// Sets a string with the given key to the given value for a specific language.
+    /// </summary>
+    /// <param name="lang">The language for which to set the string.</param>
+    /// <param name="key">The key to the string.</param>
+    /// <param name="value">The new value for the string.</param>
     public void Set(dfLanguageCode lang, string key, string value)
     {
         if (!_changes.TryGetValue(lang, out var change))

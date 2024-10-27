@@ -640,7 +640,7 @@ public class GunBehaviour : BraveBehaviour, IGunInheritable
     }
 
     /// <summary>
-    /// Runs to check whether or not this gun should automatically reload on an empty clip. Additionally gets called every frame to 
+    /// Runs to check whether or not this gun should automatically reload on an empty clip.
     /// </summary>
     /// <param name="owner">The owner of this gun.</param>
     /// <param name="gun">This gun.</param>
