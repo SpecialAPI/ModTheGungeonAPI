@@ -27,3 +27,4 @@ Mod the Gungeon API includes:
  * An3s - initial console + debug log port.
  * KubeRoot - updating SGUI to the latest version.
  * KyleTheScientist - base MTG example mod zips.
+ * This repository includes the Unity Serialization Fixer (https://github.com/xiaoxiao921/FixPluginTypesSerialization), which is licensed under the GPL v3.
