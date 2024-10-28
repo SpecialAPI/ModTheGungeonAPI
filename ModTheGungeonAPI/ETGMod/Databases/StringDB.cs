@@ -9,7 +9,7 @@ public class StringDB
     /// <summary>
     /// Current game language.
     /// </summary>
-    public StringTableManager.GungeonSupportedLanguages CurrentLanguage
+    public GungeonSupportedLanguages CurrentLanguage
     {
         get
         {
@@ -58,12 +58,17 @@ public class StringDB
 
     [HarmonyPatch(typeof(StringTableManager), nameof(StringTableManager.SetNewLanguage))]
     [HarmonyPostfix]
-    private static void LanguageChanged()
+    private static void LanguageChanged(GungeonSupportedLanguages language, bool force)
     {
+        if (!force && StringTableManager.CurrentLanguage == language)
+            return;
+
         ETGMod.Databases.Strings.Core.LanguageChanged();
         ETGMod.Databases.Strings.Items.LanguageChanged();
         ETGMod.Databases.Strings.Enemies.LanguageChanged();
         ETGMod.Databases.Strings.Intro.LanguageChanged();
+        ETGMod.Databases.Strings.Synergy.LanguageChanged();
+
         ETGMod.Databases.Strings.OnLanguageChanged?.Invoke(ETGMod.Databases.Strings.CurrentLanguage);
     }
 
@@ -74,20 +79,18 @@ public class StringDB
         ETGMod.Databases.Strings.UI.LanguageChanged(__instance);
         ETGMod.Databases.Strings.OnUILanguageChanged?.Invoke(__instance, language);
 
-        if (forceReload)
+        if (!forceReload)
+            return;
+
+        var controls = __instance.GetComponentsInChildren<dfControl>();
+
+        for (int i = 0; i < controls.Length; i++)
+            controls[i].Localize();
+
+        for (int j = 0; j < controls.Length; j++)
         {
-            dfControl[] controls = __instance.GetComponentsInChildren<dfControl>();
-
-            for (int i = 0; i < controls.Length; i++)
-            {
-                controls[i].Localize();
-            }
-
-            for (int j = 0; j < controls.Length; j++)
-            {
-                controls[j].PerformLayout();
-                controls[j].LanguageChanged?.Invoke(controls[j]);
-            }
+            controls[j].PerformLayout();
+            controls[j].LanguageChanged?.Invoke(controls[j]);
         }
     }
 
@@ -96,13 +99,11 @@ public class StringDB
         get
         {
             if (StringTableManager.m_synergyTable == null)
-            {
                 StringTableManager.m_synergyTable = StringTableManager.LoadSynergyTable(StringTableManager.m_currentSubDirectory);
-            }
+
             if (StringTableManager.m_backupSynergyTable == null)
-            {
                 StringTableManager.m_backupSynergyTable = StringTableManager.LoadSynergyTable("english_items");
-            }
+
             return StringTableManager.m_synergyTable;
         }
     }
