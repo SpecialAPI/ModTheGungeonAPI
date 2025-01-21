@@ -16,9 +16,8 @@ internal class ExtendedEnumCache
     {
         SaveManager.Init();
         if (!SaveManager.Load(EnumCacheSave, out _instance, true, 0u, null, null))
-        {
             _instance = new ExtendedEnumCache();
-        }
+
         return _instance;
     }
 

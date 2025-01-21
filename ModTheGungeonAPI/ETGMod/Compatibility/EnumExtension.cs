@@ -81,7 +81,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.GetPlayerStatValue))]
 	[HarmonyPrefix]
-	private static bool FixCharacterCountTracked(GameStatsManager __instance, out float __result, TrackedStats stat)
+	private static bool FixCharacterCountTracked_Prefix(GameStatsManager __instance, out float __result, TrackedStats stat)
     {
 		__result = 0f;
 		if (__instance.m_sessionStats != null)
@@ -97,7 +97,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.GetPlayerMaximum))]
 	[HarmonyPrefix]
-	private static bool FixCharacterCountMaximum(GameStatsManager __instance, out float __result, TrackedMaximums stat)
+	private static bool FixCharacterCountMaximum_Prefix(GameStatsManager __instance, out float __result, TrackedMaximums stat)
 	{
 		__result = 0f;
 		if (__instance.m_sessionStats != null)
@@ -118,118 +118,159 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.Save))]
 	[HarmonyPrefix]
-	private static void RemoveAndSaveExtendedEnums()
+	private static void RemoveAndSaveExtendedEnums_Save_Prefix()
     {
-		if(extendedEnums != null && GameStatsManager.m_instance != null)
-		{
-			var cache = ExtendedEnumCache.Instance;
-			var instance = GameStatsManager.m_instance;
-			cache.extendedFlags.Clear();
-			cache.extendedValidTilesets.Clear();
-			cache.extendedPlayersTrackedStats.Clear();
-			cache.extendedPlayersTrackedMaximums.Clear();
-			cache.extendedPlayersCharacterFlags.Clear();
-			if (extendedEnums.ContainsKey(typeof(GungeonFlags)) && extendedEnums[typeof(GungeonFlags)] != null)
-			{
-				(cache.extendedFlags = instance.m_flags.Where(x => extendedEnums[typeof(GungeonFlags)].ContainsValue((int)x)).ToList()).ForEach(x => instance.m_flags.Remove(x));
-			}
-			var playersAreExtended = extendedEnums.ContainsKey(typeof(PlayableCharacters)) && extendedEnums[typeof(PlayableCharacters)] != null;
-			var statsAreExtended = extendedEnums.ContainsKey(typeof(TrackedStats)) && extendedEnums[typeof(TrackedStats)] != null;
-			var maximumsAreExtended = extendedEnums.ContainsKey(typeof(TrackedMaximums)) && extendedEnums[typeof(TrackedMaximums)] != null;
-			var charFlagsAreExtended = extendedEnums.ContainsKey(typeof(CharacterSpecificGungeonFlags)) && extendedEnums[typeof(CharacterSpecificGungeonFlags)] != null;
-			if (playersAreExtended || statsAreExtended || maximumsAreExtended || charFlagsAreExtended)
+        SaveManager.GameSave.encrypted = false;
+        var instance = GameStatsManager.m_instance;
+
+        if (extendedEnums == null || instance == null)
+            return;
+
+        var cache = ExtendedEnumCache.Instance;
+
+        cache.extendedFlags.Clear();
+        cache.extendedValidTilesets.Clear();
+        cache.extendedPlayersTrackedStats.Clear();
+        cache.extendedPlayersTrackedMaximums.Clear();
+        cache.extendedPlayersCharacterFlags.Clear();
+
+        if (extendedEnums.TryGetValue(typeof(GungeonFlags), out var extFlags) && extFlags != null)
+        {
+            cache.extendedFlags = instance.m_flags.Where(x => extFlags.ContainsValue((int)x)).ToList();
+
+            foreach (var f in cache.extendedFlags)
+                instance.m_flags.Remove(f);
+        }
+
+        var playersAreExtended = extendedEnums.TryGetValue(typeof(PlayableCharacters), out var extPlayers) && extPlayers != null;
+        var statsAreExtended = extendedEnums.TryGetValue(typeof(TrackedStats), out var extStats) && extStats != null;
+        var maximumsAreExtended = extendedEnums.TryGetValue(typeof(TrackedMaximums), out var extMaximums) && extMaximums != null;
+        var charFlagsAreExtended = extendedEnums.TryGetValue(typeof(CharacterSpecificGungeonFlags), out var extChFlags) && extChFlags != null;
+
+        if (playersAreExtended || statsAreExtended || maximumsAreExtended || charFlagsAreExtended)
+        {
+            var removalTargets = new List<PlayableCharacters>();
+
+            foreach (var kvp in instance.m_characterStats)
             {
-				List<PlayableCharacters> removalTargets = new();
-				foreach(var kvp in instance.m_characterStats)
+                var gameStats = kvp.Value;
+                var ch = kvp.Key;
+
+                if (gameStats == null)
+                    continue;
+
+                if (playersAreExtended && extPlayers.ContainsValue((int)ch))
                 {
-                    if (kvp.Value != null && extendedEnums[typeof(PlayableCharacters)].ContainsValue((int)kvp.Key))
-                    {
-						removalTargets.Add(kvp.Key);
-						cache.extendedPlayersTrackedStats[kvp.Key] = new(kvp.Value.stats);
-						cache.extendedPlayersTrackedMaximums[kvp.Key] = new(kvp.Value.maxima);
-						cache.extendedPlayersCharacterFlags[kvp.Key] = new(kvp.Value.m_flags);
-					}
-                    else
-                    {
-                        if (statsAreExtended)
-                        {
-							(cache.extendedPlayersTrackedStats[kvp.Key] = kvp.Value.stats.Where(x => extendedEnums[typeof(TrackedStats)].ContainsValue((int)x.Key)).ToList()).Do(x => kvp.Value.stats.Remove(x.Key));
-                        }
-                        if(maximumsAreExtended)
-						{
-							(cache.extendedPlayersTrackedMaximums[kvp.Key] = kvp.Value.maxima.Where(x => extendedEnums[typeof(TrackedMaximums)].ContainsValue((int)x.Key)).ToList()).Do(x => kvp.Value.maxima.Remove(x.Key));
-						}
-                        if (charFlagsAreExtended)
-						{
-							(cache.extendedPlayersCharacterFlags[kvp.Key] = kvp.Value.m_flags.Where(x => extendedEnums[typeof(CharacterSpecificGungeonFlags)].ContainsValue((int)x)).ToList()).Do(x => kvp.Value.m_flags.Remove(x));
-						}
-                    }
+                    removalTargets.Add(ch);
+
+                    cache.extendedPlayersTrackedStats[ch] = new(gameStats.stats);
+                    cache.extendedPlayersTrackedMaximums[ch] = new(gameStats.maxima);
+                    cache.extendedPlayersCharacterFlags[ch] = new(gameStats.m_flags);
+                    continue;
                 }
-				removalTargets.Do(x => instance.m_characterStats.Remove(x));
+
+                if (statsAreExtended)
+                {
+                    cache.extendedPlayersTrackedStats[ch] = gameStats.stats.Where(x => extStats.ContainsValue((int)x.Key)).ToList();
+
+                    foreach (var kvp2 in cache.extendedPlayersTrackedStats[ch])
+                        gameStats.stats.Remove(kvp2.Key);
+                }
+
+                if (maximumsAreExtended)
+                {
+                    cache.extendedPlayersTrackedMaximums[ch] = gameStats.maxima.Where(x => extMaximums.ContainsValue((int)x.Key)).ToList();
+
+                    foreach (var kvp2 in cache.extendedPlayersTrackedMaximums[ch])
+                        gameStats.maxima.Remove(kvp2.Key);
+                }
+
+                if (charFlagsAreExtended)
+                {
+                    cache.extendedPlayersCharacterFlags[ch] = gameStats.m_flags.Where(x => extChFlags.ContainsValue((int)x)).ToList();
+
+                    foreach (var flag in cache.extendedPlayersCharacterFlags[ch])
+                        gameStats.m_flags.Remove(flag);
+                }
             }
-			if (extendedEnums.ContainsKey(typeof(GlobalDungeonData.ValidTilesets)) && extendedEnums[typeof(GlobalDungeonData.ValidTilesets)] != null)
-			{
-				(cache.extendedValidTilesets = instance.LastBossEncounteredMap.Where(x => extendedEnums[typeof(GlobalDungeonData.ValidTilesets)].ContainsValue((int)x.Key)).ToList()).ForEach(x => 
-					instance.LastBossEncounteredMap.Remove(x.Key));
-			}
-			ExtendedEnumCache.Save();
-		}
-		SaveManager.GameSave.encrypted = false;
+
+            foreach (var key in removalTargets)
+                instance.m_characterStats.Remove(key);
+        }
+
+        if (extendedEnums.TryGetValue(typeof(GlobalDungeonData.ValidTilesets), out var extTilesets) && extTilesets != null)
+        {
+            cache.extendedValidTilesets = instance.LastBossEncounteredMap.Where(x => extTilesets.ContainsValue((int)x.Key)).ToList();
+
+            foreach (var tileset in cache.extendedValidTilesets)
+                instance.LastBossEncounteredMap.Remove(tileset.Key);
+        }
+
+        ExtendedEnumCache.Save();
+    }
+
+    [HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.Save))]
+	[HarmonyPostfix]
+    private static void AddBackExtendedEnums_Save_Postfix()
+	{
+		AddBackExtendedEnums();
 	}
 
-	[HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.Save))]
-	[HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.Load))]
+    [HarmonyPatch(typeof(GameStatsManager), nameof(GameStatsManager.Load))]
 	[HarmonyPostfix]
+	public static void AddBackExtendedEnums_Load_Postfix()
+	{
+		ExtendedEnumCache.Load();
+		AddBackExtendedEnums();
+	}
+
 	private static void AddBackExtendedEnums()
     {
-		if (GameStatsManager.m_instance != null)
-		{
-			var cache = ExtendedEnumCache.Instance;
-			var instance = GameStatsManager.m_instance;
-			cache.extendedFlags.ForEach(x => instance.m_flags.Add(x));
-			foreach(var stats in cache.extendedPlayersTrackedStats)
-            {
-                if (!instance.m_characterStats.ContainsKey(stats.Key) || instance.m_characterStats[stats.Key] == null)
-                {
-					instance.m_characterStats[stats.Key] = new();
-                }
-				foreach(var stat in stats.Value)
-                {
-					instance.m_characterStats[stats.Key].stats[stat.Key] = stat.Value;
-                }
-			}
-			foreach (var maximums in cache.extendedPlayersTrackedMaximums)
-			{
-				if (!instance.m_characterStats.ContainsKey(maximums.Key) || instance.m_characterStats[maximums.Key] == null)
-				{
-					instance.m_characterStats[maximums.Key] = new();
-				}
-				foreach (var maximum in maximums.Value)
-				{
-					instance.m_characterStats[maximums.Key].maxima[maximum.Key] = maximum.Value;
-				}
-			}
-			foreach (var flags in cache.extendedPlayersCharacterFlags)
-			{
-				if (!instance.m_characterStats.ContainsKey(flags.Key) || instance.m_characterStats[flags.Key] == null)
-				{
-					instance.m_characterStats[flags.Key] = new();
-				}
-				foreach (var flag in flags.Value)
-				{
-					instance.m_characterStats[flags.Key].m_flags.Add(flag);
-				}
-			}
-			foreach(var tileset in cache.extendedValidTilesets)
-            {
-				instance.LastBossEncounteredMap[tileset.Key] = tileset.Value;
-            }
-		}
-	}
+		var instance = GameStatsManager.m_instance;
 
-	[HarmonyPatch(typeof(fsEnumConverter), nameof(fsEnumConverter.TryDeserialize))]
+        if (instance == null)
+            return;
+
+        ExtendedEnumCache.Load();
+        var cache = ExtendedEnumCache.Instance;
+
+		foreach(var flag in cache.extendedFlags)
+			instance.m_flags.Add(flag);
+
+        foreach (var stats in cache.extendedPlayersTrackedStats)
+        {
+			if(!instance.m_characterStats.TryGetValue(stats.Key, out var gameStats) || gameStats == null)
+				instance.m_characterStats[stats.Key] = gameStats = new();
+
+            foreach (var stat in stats.Value)
+                gameStats.stats[stat.Key] = stat.Value;
+        }
+
+        foreach (var maximums in cache.extendedPlayersTrackedMaximums)
+        {
+            if (!instance.m_characterStats.TryGetValue(maximums.Key, out var gameStats) || gameStats == null)
+                instance.m_characterStats[maximums.Key] = gameStats = new();
+
+            foreach (var maximum in maximums.Value)
+                gameStats.maxima[maximum.Key] = maximum.Value;
+        }
+
+        foreach (var flags in cache.extendedPlayersCharacterFlags)
+        {
+            if (!instance.m_characterStats.TryGetValue(flags.Key, out var gameStats) || gameStats == null)
+                instance.m_characterStats[flags.Key] = gameStats = new();
+
+            foreach (var flag in flags.Value)
+                gameStats.m_flags.Add(flag);
+        }
+
+        foreach (var tileset in cache.extendedValidTilesets)
+            instance.LastBossEncounteredMap[tileset.Key] = tileset.Value;
+    }
+
+    [HarmonyPatch(typeof(fsEnumConverter), nameof(fsEnumConverter.TryDeserialize))]
 	[HarmonyPostfix]
-	private static void FixEnumConverter(ref fsResult __result, fsData data, ref object instance, Type storageType)
+	private static void FixEnumConverter_Postfix(ref fsResult __result, fsData data, ref object instance, Type storageType)
     {
         if (!__result._success && data.IsString)
         {
@@ -264,7 +305,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(Enum), nameof(Enum.GetValues))]
     [HarmonyPostfix]
-    private static void AddNewValues(ref Array __result, Type enumType)
+    private static void AddNewValues_Postfix(ref Array __result, Type enumType)
     {
         if (__result != null && extendedEnums != null && extendedEnums.ContainsKey(enumType))
         {
@@ -284,7 +325,7 @@ public static partial class ETGModCompatibility
 
     [HarmonyPatch(typeof(Enum), nameof(Enum.GetNames))]
     [HarmonyPostfix]
-	private static void AddNewNames(ref string[] __result, Type enumType)
+	private static void AddNewNames_Postfix(ref string[] __result, Type enumType)
     {
         if (__result != null && extendedEnums != null && extendedEnums.ContainsKey(enumType))
         {
@@ -294,7 +335,7 @@ public static partial class ETGModCompatibility
 
     [HarmonyPatch(typeof(Enum), nameof(Enum.GetName))]
     [HarmonyPostfix]
-	private static void AddName(ref string __result, Type enumType, object value)
+	private static void AddName_Postfix(ref string __result, Type enumType, object value)
     {
         if(__result == null && extendedEnums != null && extendedEnums.ContainsKey(enumType))
         {
@@ -313,7 +354,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(Enum), nameof(Enum.IsDefined))]
 	[HarmonyPostfix]
-	private static void AddDefined(ref bool __result, Type enumType, object value)
+	private static void AddDefined_Postfix(ref bool __result, Type enumType, object value)
     {
 		if(extendedEnums != null && extendedEnums.ContainsKey(enumType) && !__result)
 		{
@@ -331,7 +372,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(Enum), nameof(Enum.Parse), typeof(Type), typeof(string), typeof(bool))]
 	[HarmonyFinalizer]
-	private static Exception AddParse(Exception __exception, ref object __result, Type enumType, string value, bool ignoreCase)
+	private static Exception AddParse_Finalizer(Exception __exception, ref object __result, Type enumType, string value, bool ignoreCase)
     {
 		if(__exception != null)
         {
@@ -432,7 +473,7 @@ public static partial class ETGModCompatibility
 
 	[HarmonyPatch(typeof(Enum), "FormatFlags")]
     [HarmonyPostfix]
-	private static void FixFlagFormatting(ref string __result, Type enumType, object value)
+	private static void FixFlagFormatting_Postfix(ref string __result, Type enumType, object value)
     {
         if(extendedEnums != null && extendedEnums.ContainsKey(enumType))
         {
